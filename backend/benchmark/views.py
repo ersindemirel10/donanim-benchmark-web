@@ -4,6 +4,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 
 from .models import Component
+from .permissions import IsCreatorOrReadOnly
 from .serializers import ComponentSerializer, RegisterSerializer
 
 User = get_user_model()
@@ -47,3 +48,12 @@ class ComponentListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+
+
+@extend_schema(tags=['Components'])
+class ComponentDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """GET: tek parça. PUT/PATCH/DELETE: sadece parçayı ekleyen kullanıcı."""
+
+    queryset = Component.objects.all()
+    serializer_class = ComponentSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsCreatorOrReadOnly]
