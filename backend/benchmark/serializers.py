@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import Component, SystemBuild
+from .models import Component, SystemBuild, TuningProfile
 
 User = get_user_model()
 
@@ -40,3 +40,29 @@ class BuildSerializer(serializers.ModelSerializer):
         model = SystemBuild
         fields = ['id', 'name', 'form_factor', 'description', 'owner', 'components', 'created_at']
         read_only_fields = ['id', 'owner', 'created_at']  # owner giriş yapan kullanıcıdan alınır
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TuningProfile
+        fields = [
+            'id', 'build', 'name', 'cpu_undervolt_mv', 'gpu_undervolt_mv',
+            'power_limit_w', 'fan_profile', 'notes',
+        ]
+        read_only_fields = ['id', 'build']  # build adresten (URL) alınır
+
+    def _check_undervolt(self, value):
+        if value is not None and not (-250 <= value <= 0):
+            raise serializers.ValidationError('Undervolt değeri -250 ile 0 mV arasında olmalı.')
+        return value
+
+    def validate_cpu_undervolt_mv(self, value):
+        return self._check_undervolt(value)
+
+    def validate_gpu_undervolt_mv(self, value):
+        return self._check_undervolt(value)
+
+    def validate_power_limit_w(self, value):
+        if value is not None and value <= 0:
+            raise serializers.ValidationError("Güç limiti 0'dan büyük olmalı.")
+        return value

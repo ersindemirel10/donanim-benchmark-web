@@ -1,11 +1,15 @@
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import generics, permissions, status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
-from .models import Component, SystemBuild
+from .models import Component, SystemBuild, TuningProfile
 from .permissions import IsBuildOwner, IsCreatorOrReadOnly
-from .serializers import BuildSerializer, ComponentSerializer, RegisterSerializer
+from .serializers import (
+    BuildSerializer, ComponentSerializer, ProfileSerializer, RegisterSerializer,
+)
 
 User = get_user_model()
 
@@ -82,4 +86,38 @@ class BuildDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     queryset = SystemBuild.objects.all()
     serializer_class = BuildSerializer
+    permission_classes = [permissions.IsAuthenticated, IsBuildOwner]
+
+
+def get_owned_build(request, build_id):
+    """Adresteki sistemi getirir: yoksa 404, başkasınınsa 403."""
+    build = get_object_or_404(SystemBuild, pk=build_id)
+    if build.owner_id != request.user.id:
+        raise PermissionDenied(IsBuildOwner.message)
+    return build
+
+
+@extend_schema(tags=['Profiles'])
+class ProfileListCreateView(generics.ListCreateAPIView):
+    """Bir sistemin ayar profilleri. GET: listele, POST: ekle (sadece sistemin sahibi)."""
+
+    serializer_class = ProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return TuningProfile.objects.none()
+        build = get_owned_build(self.request, self.kwargs['build_id'])
+        return build.profiles.order_by('id')
+
+    def perform_create(self, serializer):
+        serializer.save(build=get_owned_build(self.request, self.kwargs['build_id']))
+
+
+@extend_schema(tags=['Profiles'])
+class ProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Tek profil. Sadece profilin bağlı olduğu sistemin sahibi erişebilir."""
+
+    queryset = TuningProfile.objects.select_related('build')
+    serializer_class = ProfileSerializer
     permission_classes = [permissions.IsAuthenticated, IsBuildOwner]

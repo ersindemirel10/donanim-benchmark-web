@@ -4,7 +4,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .views import (
     BuildDetailView, BuildListCreateView,
-    ComponentDetailView, ComponentListCreateView, RegisterView,
+    ComponentDetailView, ComponentListCreateView,
+    ProfileDetailView, ProfileListCreateView, RegisterView,
 )
 
 LoginView = extend_schema(tags=['Auth'], summary='Giriş (JWT token al)')(TokenObtainPairView)
@@ -18,4 +19,6 @@ urlpatterns = [
     path('components/<int:pk>/', ComponentDetailView.as_view(), name='component-detail'),
     path('builds/', BuildListCreateView.as_view(), name='build-list'),
     path('builds/<int:pk>/', BuildDetailView.as_view(), name='build-detail'),
+    path('builds/<int:build_id>/profiles/', ProfileListCreateView.as_view(), name='profile-list'),
+    path('profiles/<int:pk>/', ProfileDetailView.as_view(), name='profile-detail'),
 ]

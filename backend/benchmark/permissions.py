@@ -1,5 +1,7 @@
 from rest_framework import permissions
 
+from .models import SystemBuild
+
 
 class IsCreatorOrReadOnly(permissions.BasePermission):
     """Okuma herkese açık; değiştirme/silme sadece kaydı oluşturan kullanıcıya."""
@@ -13,9 +15,11 @@ class IsCreatorOrReadOnly(permissions.BasePermission):
 
 
 class IsBuildOwner(permissions.BasePermission):
-    """Sistem kişiseldir: okuma dahil her işlem sadece sahibine açık."""
+    """Sistem kişiseldir: okuma dahil her işlem sadece sahibine açık.
+    Sisteme bağlı kayıtlarda (ayar profili) sahiplik, bağlı olduğu sistemden okunur."""
 
     message = 'Bu sistem size ait değil.'
 
     def has_object_permission(self, request, view, obj):
-        return obj.owner_id == request.user.id
+        build = obj if isinstance(obj, SystemBuild) else obj.build
+        return build.owner_id == request.user.id
