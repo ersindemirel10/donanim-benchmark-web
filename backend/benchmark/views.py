@@ -5,10 +5,11 @@ from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
-from .models import Component, SystemBuild, TuningProfile
+from .models import BenchmarkRun, Component, SystemBuild, TuningProfile
 from .permissions import IsBuildOwner, IsCreatorOrReadOnly
 from .serializers import (
     BuildSerializer, ComponentSerializer, ProfileSerializer, RegisterSerializer,
+    RunSerializer, RunUpdateSerializer,
 )
 
 User = get_user_model()
@@ -121,3 +122,40 @@ class ProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = TuningProfile.objects.select_related('build')
     serializer_class = ProfileSerializer
     permission_classes = [permissions.IsAuthenticated, IsBuildOwner]
+
+
+@extend_schema(tags=['Runs'])
+class RunListCreateView(generics.ListCreateAPIView):
+    """Bir sistemin benchmark sonuçları. GET: listele (yeniden eskiye), POST: ekle."""
+
+    serializer_class = RunSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return BenchmarkRun.objects.none()
+        build = get_owned_build(self.request, self.kwargs['build_id'])
+        return build.runs.order_by('-id')
+
+    def get_serializer_context(self):
+        # Serializer, seçilen profilin bu sisteme ait olup olmadığını kontrol edebilsin
+        context = super().get_serializer_context()
+        if not getattr(self, 'swagger_fake_view', False):
+            context['build'] = get_owned_build(self.request, self.kwargs['build_id'])
+        return context
+
+    def perform_create(self, serializer):
+        serializer.save(build=get_owned_build(self.request, self.kwargs['build_id']))
+
+
+@extend_schema(tags=['Runs'])
+class RunDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Tek test sonucu. PUT/PATCH ile sadece 'notes' güncellenebilir."""
+
+    queryset = BenchmarkRun.objects.select_related('build')
+    permission_classes = [permissions.IsAuthenticated, IsBuildOwner]
+
+    def get_serializer_class(self):
+        if self.request.method in ('PUT', 'PATCH'):
+            return RunUpdateSerializer
+        return RunSerializer

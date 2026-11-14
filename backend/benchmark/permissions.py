@@ -16,7 +16,7 @@ class IsCreatorOrReadOnly(permissions.BasePermission):
 
 class IsBuildOwner(permissions.BasePermission):
     """Sistem kişiseldir: okuma dahil her işlem sadece sahibine açık.
-    Sisteme bağlı kayıtlarda (ayar profili) sahiplik, bağlı olduğu sistemden okunur."""
+    Sisteme bağlı kayıtlarda (ayar profili, test sonucu) sahiplik, bağlı olduğu sistemden okunur."""
 
     message = 'Bu sistem size ait değil.'
 

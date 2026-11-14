@@ -6,6 +6,7 @@ from .views import (
     BuildDetailView, BuildListCreateView,
     ComponentDetailView, ComponentListCreateView,
     ProfileDetailView, ProfileListCreateView, RegisterView,
+    RunDetailView, RunListCreateView,
 )
 
 LoginView = extend_schema(tags=['Auth'], summary='Giriş (JWT token al)')(TokenObtainPairView)
@@ -21,4 +22,6 @@ urlpatterns = [
     path('builds/<int:pk>/', BuildDetailView.as_view(), name='build-detail'),
     path('builds/<int:build_id>/profiles/', ProfileListCreateView.as_view(), name='profile-list'),
     path('profiles/<int:pk>/', ProfileDetailView.as_view(), name='profile-detail'),
+    path('builds/<int:build_id>/runs/', RunListCreateView.as_view(), name='run-list'),
+    path('runs/<int:pk>/', RunDetailView.as_view(), name='run-detail'),
 ]

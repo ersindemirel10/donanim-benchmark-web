@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import Component, SystemBuild, TuningProfile
+from .models import BenchmarkRun, Component, SystemBuild, TuningProfile
 
 User = get_user_model()
 
@@ -66,3 +66,28 @@ class ProfileSerializer(serializers.ModelSerializer):
         if value is not None and value <= 0:
             raise serializers.ValidationError("Güç limiti 0'dan büyük olmalı.")
         return value
+
+
+class RunSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BenchmarkRun
+        fields = [
+            'id', 'build', 'profile', 'software', 'score',
+            'max_cpu_temp_c', 'max_gpu_temp_c', 'avg_cpu_clock_mhz', 'avg_gpu_clock_mhz',
+            'ambient_temp_c', 'notes', 'throttled', 'throttle_reason', 'created_at',
+        ]
+        # build adresten alınır; throttled / throttle_reason kullanıcıdan alınmaz
+        read_only_fields = ['id', 'build', 'throttled', 'throttle_reason', 'created_at']
+
+    def validate_profile(self, profile):
+        build = self.context.get('build')
+        if profile is not None and build is not None and profile.build_id != build.id:
+            raise serializers.ValidationError('Bu profil seçilen sisteme ait değil.')
+        return profile
+
+
+class RunUpdateSerializer(RunSerializer):
+    """Test sonucu ölçüm olduğu için sonradan sadece not değiştirilebilir."""
+
+    class Meta(RunSerializer.Meta):
+        read_only_fields = [f for f in RunSerializer.Meta.fields if f != 'notes']
