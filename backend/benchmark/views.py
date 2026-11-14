@@ -3,9 +3,9 @@ from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 
-from .models import Component
-from .permissions import IsCreatorOrReadOnly
-from .serializers import ComponentSerializer, RegisterSerializer
+from .models import Component, SystemBuild
+from .permissions import IsBuildOwner, IsCreatorOrReadOnly
+from .serializers import BuildSerializer, ComponentSerializer, RegisterSerializer
 
 User = get_user_model()
 
@@ -57,3 +57,29 @@ class ComponentDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Component.objects.all()
     serializer_class = ComponentSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsCreatorOrReadOnly]
+
+
+@extend_schema(tags=['Builds'])
+class BuildListCreateView(generics.ListCreateAPIView):
+    """GET: giriş yapan kullanıcının sistemleri. POST: yeni sistem ekler."""
+
+    serializer_class = BuildSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Swagger şemayı oluştururken giriş yapılmış kullanıcı yoktur
+        if getattr(self, 'swagger_fake_view', False):
+            return SystemBuild.objects.none()
+        return SystemBuild.objects.filter(owner=self.request.user).order_by('id')
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+
+@extend_schema(tags=['Builds'])
+class BuildDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Tek sistem. Sadece sahibi görebilir, değiştirebilir, silebilir (başkası: 403)."""
+
+    queryset = SystemBuild.objects.all()
+    serializer_class = BuildSerializer
+    permission_classes = [permissions.IsAuthenticated, IsBuildOwner]

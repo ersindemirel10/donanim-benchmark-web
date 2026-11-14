@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import Component
+from .models import Component, SystemBuild
 
 User = get_user_model()
 
@@ -28,3 +28,15 @@ class ComponentSerializer(serializers.ModelSerializer):
             'max_temp_c', 'memory_gb', 'created_by',
         ]
         read_only_fields = ['id', 'created_by']  # created_by giriş yapan kullanıcıdan alınır
+
+
+class BuildSerializer(serializers.ModelSerializer):
+    # Parçalar id listesi olarak gönderilir ve döner: "components": [1, 2]
+    components = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Component.objects.all(), required=False
+    )
+
+    class Meta:
+        model = SystemBuild
+        fields = ['id', 'name', 'form_factor', 'description', 'owner', 'components', 'created_at']
+        read_only_fields = ['id', 'owner', 'created_at']  # owner giriş yapan kullanıcıdan alınır

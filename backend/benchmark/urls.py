@@ -2,7 +2,10 @@ from django.urls import path
 from drf_spectacular.utils import extend_schema
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from .views import ComponentDetailView, ComponentListCreateView, RegisterView
+from .views import (
+    BuildDetailView, BuildListCreateView,
+    ComponentDetailView, ComponentListCreateView, RegisterView,
+)
 
 LoginView = extend_schema(tags=['Auth'], summary='Giriş (JWT token al)')(TokenObtainPairView)
 RefreshView = extend_schema(tags=['Auth'], summary='Access token yenile')(TokenRefreshView)
@@ -13,4 +16,6 @@ urlpatterns = [
     path('auth/refresh/', RefreshView.as_view(), name='token-refresh'),
     path('components/', ComponentListCreateView.as_view(), name='component-list'),
     path('components/<int:pk>/', ComponentDetailView.as_view(), name='component-detail'),
+    path('builds/', BuildListCreateView.as_view(), name='build-list'),
+    path('builds/<int:pk>/', BuildDetailView.as_view(), name='build-detail'),
 ]
