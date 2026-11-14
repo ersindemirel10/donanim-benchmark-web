@@ -91,3 +91,20 @@ class RunUpdateSerializer(RunSerializer):
 
     class Meta(RunSerializer.Meta):
         read_only_fields = [f for f in RunSerializer.Meta.fields if f != 'notes']
+
+
+# ── Profil kıyaslama (sadece cevap şeması, veritabanı modeli değil) ──────────
+class CompareRowSerializer(serializers.Serializer):
+    profile_id = serializers.IntegerField(allow_null=True)
+    profile_name = serializers.CharField(allow_null=True)
+    run_count = serializers.IntegerField()
+    avg_score = serializers.FloatField()
+    max_cpu_temp = serializers.IntegerField(allow_null=True)
+    max_gpu_temp = serializers.IntegerField(allow_null=True)
+    throttled_count = serializers.IntegerField()
+
+
+class CompareSerializer(serializers.Serializer):
+    build_id = serializers.IntegerField()
+    build_name = serializers.CharField()
+    rows = CompareRowSerializer(many=True)

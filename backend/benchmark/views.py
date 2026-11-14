@@ -1,14 +1,16 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Avg, Count, Max, Q
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import BenchmarkRun, Component, SystemBuild, TuningProfile
 from .permissions import IsBuildOwner, IsCreatorOrReadOnly
 from .serializers import (
-    BuildSerializer, ComponentSerializer, ProfileSerializer, RegisterSerializer,
+    BuildSerializer, CompareSerializer, ComponentSerializer, ProfileSerializer, RegisterSerializer,
     RunSerializer, RunUpdateSerializer,
 )
 from .services import detect_throttle
@@ -167,3 +169,47 @@ class RunDetailView(generics.RetrieveUpdateDestroyAPIView):
         if self.request.method in ('PUT', 'PATCH'):
             return RunUpdateSerializer
         return RunSerializer
+
+
+@extend_schema(
+    tags=['Builds'],
+    summary='Sistemin ayar profillerini kıyasla',
+    responses={200: CompareSerializer},
+)
+class BuildCompareView(APIView):
+    """Sistemdeki test sonuçlarını profile göre gruplar. Her profil için test sayısı,
+    ortalama skor, en yüksek CPU/GPU sıcaklığı ve kaç testin throttle olduğunu verir.
+    En yüksek ortalama skorlu profil en üstte gelir. Profilsiz testler ayrı bir satırdır."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, build_id):
+        build = get_owned_build(request, build_id)
+        rows = (
+            build.runs.values('profile_id', 'profile__name')  # profile göre grupla
+            .annotate(
+                run_count=Count('id'),
+                avg_score=Avg('score'),
+                max_cpu_temp=Max('max_cpu_temp_c'),
+                max_gpu_temp=Max('max_gpu_temp_c'),
+                throttled_count=Count('id', filter=Q(throttled=True)),
+            )
+            .order_by('-avg_score')
+        )
+        data = {
+            'build_id': build.id,
+            'build_name': build.name,
+            'rows': [
+                {
+                    'profile_id': r['profile_id'],
+                    'profile_name': r['profile__name'],
+                    'run_count': r['run_count'],
+                    'avg_score': round(r['avg_score'], 2),
+                    'max_cpu_temp': r['max_cpu_temp'],
+                    'max_gpu_temp': r['max_gpu_temp'],
+                    'throttled_count': r['throttled_count'],
+                }
+                for r in rows
+            ],
+        }
+        return Response(CompareSerializer(data).data)
