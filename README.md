@@ -52,20 +52,46 @@ Not: `activate` komutundan sonra satırın başında `(venv)` yazmalı.
 
 ## Endpoint'ler
 
-| Metot | Adres | Açıklama | Giriş gerekir mi? |
-|-------|-------|----------|-------------------|
-| POST | `/api/auth/register/` | Kayıt | Hayır |
-| POST | `/api/auth/login/` | Giriş, JWT token verir | Hayır |
-| POST | `/api/auth/refresh/` | Access token yeniler | Hayır |
-| GET | `/api/components/` | Parçaları listeler | Hayır |
-| POST | `/api/components/` | Parça ekler | Evet |
-| GET | `/api/components/{id}/` | Tek parça | Hayır |
-| PUT / PATCH | `/api/components/{id}/` | Parça günceller (sadece ekleyen) | Evet |
-| DELETE | `/api/components/{id}/` | Parça siler (sadece ekleyen) | Evet |
+Hepsinin başında `/api` var. Tam liste ve canlı deneme için Swagger sayfasına bakın.
 
-Korumalı endpoint'leri Swagger'da denemek için `login` cevabındaki `access` token'ı sağ üstteki **Authorize** butonuna yapıştır (başına `Bearer` yazma). Access token 5 dakika geçerli.
+**Auth**
+| Metot | Adres | Açıklama | Giriş |
+|-------|-------|----------|-------|
+| POST | `/auth/register/` | Kayıt | Hayır |
+| POST | `/auth/login/` | Giriş, JWT token verir | Hayır |
+| POST | `/auth/refresh/` | Access token yeniler | Hayır |
 
-Dönen durum kodları: `200`, `201`, `204`, `400` (doğrulama hatası), `401` (giriş yok), `403` (başkasının kaydı), `404`, `409` (kullanıcı adı/e-posta zaten var).
+**Parçalar** (herkese açık katalog, değiştirme/silme sadece ekleyen kullanıcı)
+| Metot | Adres | Giriş |
+|-------|-------|-------|
+| GET, POST | `/components/` | GET hayır, POST evet |
+| GET, PUT, PATCH, DELETE | `/components/{id}/` | GET hayır, diğerleri evet |
+
+**Sistemler** (kişisel, sadece sahibi görür ve değiştirir)
+| Metot | Adres | Açıklama |
+|-------|-------|----------|
+| GET, POST | `/builds/` | Kendi sistemlerini listele / ekle |
+| GET, PUT, PATCH, DELETE | `/builds/{id}/` | Tek sistem |
+| GET | `/builds/{id}/compare/` | Ayar profillerini kıyasla |
+
+**Ayar profilleri ve test sonuçları** (sistemin sahibine açık)
+| Metot | Adres | Açıklama |
+|-------|-------|----------|
+| GET, POST | `/builds/{id}/profiles/` | Sistemin profillerini listele / ekle |
+| GET, PUT, PATCH, DELETE | `/profiles/{id}/` | Tek profil |
+| GET, POST | `/builds/{id}/runs/` | Sistemin test sonuçlarını listele / ekle |
+| GET, PUT, PATCH, DELETE | `/runs/{id}/` | Tek test sonucu (güncellemede sadece `notes`) |
+
+Korumalı endpoint'leri Swagger'da denemek için `login` cevabındaki `access` token'ı sağ üstteki **Authorize** butonuna yapıştır (başına `Bearer` yazma). Access token 10 dakika geçerli.
+
+Dönen durum kodları: `200`, `201`, `204`, `400` (doğrulama hatası), `401` (giriş yok / token geçersiz), `403` (başkasının kaydı), `404`, `409` (kullanıcı adı/e-posta zaten var).
+
+## İş kuralları
+
+- **Termal darboğaz tespiti** (`benchmark/services.py`): Test sonucu eklenirken ölçülen en yüksek CPU/GPU sıcaklığı, sistemdeki parçanın `max_temp_c` sınırına ulaştıysa `throttled` ve `throttle_reason` alanlarını backend doldurur. Kullanıcı bu alanları gönderse de dikkate alınmaz.
+- **Profil kıyaslama** (`/builds/{id}/compare/`): Her profil için test sayısı, ortalama skor, en yüksek sıcaklıklar ve throttle sayısı. En yüksek ortalama skor üstte.
+- **Doğrulama:** Undervolt -250 ile 0 mV arasında, güç limiti 0'dan büyük olmalı. Test sonucuna seçilen profil aynı sisteme ait olmalı.
+- **Sahiplik:** Parçayı sadece ekleyen, sistemi/profili/test sonucunu sadece sistemin sahibi değiştirebilir.
 
 ## Durum
 
@@ -73,10 +99,9 @@ Dönen durum kodları: `200`, `201`, `204`, `400` (doğrulama hatası), `401` (g
 - Proje iskeleti, veritabanı modelleri ve migration'lar
 - Kayıt, giriş ve JWT kimlik doğrulama
 - Swagger entegrasyonu
-- Parça (Component) için CRUD ve sahiplik kontrolü
+- Parça, sistem, ayar profili ve test sonucu için CRUD ve sahiplik kontrolleri
+- Termal darboğaz tespiti ve profil kıyaslama
+- React için CORS ayarı
 
 **Yapılacak**
-- Sistem, ayar profili ve test sonucu endpoint'leri
-- Termal darboğaz tespiti (sıcaklık parçanın sınırına ulaştıysa test otomatik işaretlenecek)
-- Profilleri kıyaslama endpoint'i
 - React arayüzü
