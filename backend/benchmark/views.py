@@ -11,6 +11,7 @@ from .serializers import (
     BuildSerializer, ComponentSerializer, ProfileSerializer, RegisterSerializer,
     RunSerializer, RunUpdateSerializer,
 )
+from .services import detect_throttle
 
 User = get_user_model()
 
@@ -126,7 +127,8 @@ class ProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 @extend_schema(tags=['Runs'])
 class RunListCreateView(generics.ListCreateAPIView):
-    """Bir sistemin benchmark sonuçları. GET: listele (yeniden eskiye), POST: ekle."""
+    """Bir sistemin benchmark sonuçları. GET: listele (yeniden eskiye), POST: ekle.
+    POST sırasında termal darboğaz backend tarafından otomatik tespit edilir."""
 
     serializer_class = RunSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -145,7 +147,13 @@ class RunListCreateView(generics.ListCreateAPIView):
         return context
 
     def perform_create(self, serializer):
-        serializer.save(build=get_owned_build(self.request, self.kwargs['build_id']))
+        build = get_owned_build(self.request, self.kwargs['build_id'])
+        data = serializer.validated_data
+        # throttled alanlarını kullanıcı değil backend belirler
+        throttled, reason = detect_throttle(
+            build, data.get('max_cpu_temp_c'), data.get('max_gpu_temp_c')
+        )
+        serializer.save(build=build, throttled=throttled, throttle_reason=reason)
 
 
 @extend_schema(tags=['Runs'])
