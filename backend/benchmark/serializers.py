@@ -108,3 +108,11 @@ class CompareSerializer(serializers.Serializer):
     build_id = serializers.IntegerField()
     build_name = serializers.CharField()
     rows = CompareRowSerializer(many=True)
+
+
+class MeSerializer(serializers.ModelSerializer):
+    """Giriş yapan kullanıcının bilgileri (şifre asla dönmez)."""
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email']

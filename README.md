@@ -60,6 +60,7 @@ Hepsinin başında `/api` var. Tam liste ve canlı deneme için Swagger sayfası
 | POST | `/auth/register/` | Kayıt | Hayır |
 | POST | `/auth/login/` | Giriş, JWT token verir | Hayır |
 | POST | `/auth/refresh/` | Access token yeniler | Hayır |
+| GET | `/auth/me/` | Giriş yapan kullanıcının id, kullanıcı adı, e-postası | Evet |
 
 **Parçalar** (herkese açık katalog, değiştirme/silme sadece ekleyen kullanıcı)
 | Metot | Adres | Giriş |

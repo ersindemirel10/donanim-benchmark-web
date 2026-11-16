@@ -10,7 +10,8 @@ from rest_framework.views import APIView
 from .models import BenchmarkRun, Component, SystemBuild, TuningProfile
 from .permissions import IsBuildOwner, IsCreatorOrReadOnly
 from .serializers import (
-    BuildSerializer, CompareSerializer, ComponentSerializer, ProfileSerializer, RegisterSerializer,
+    BuildSerializer, CompareSerializer, ComponentSerializer, MeSerializer,
+    ProfileSerializer, RegisterSerializer,
     RunSerializer, RunUpdateSerializer,
 )
 from .services import detect_throttle
@@ -44,6 +45,17 @@ class RegisterView(generics.CreateAPIView):
                 {'detail': 'Bu e-posta zaten kayıtlı.'}, status=status.HTTP_409_CONFLICT
             )
         return super().create(request, *args, **kwargs)
+
+
+@extend_schema(tags=['Auth'], summary='Giriş yapan kullanıcının bilgileri')
+class MeView(generics.RetrieveAPIView):
+    """Frontend, sahiplik kontrolü (hangi kayıtlar benim?) için kullanıcı id'sine ihtiyaç duyar."""
+
+    serializer_class = MeSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
 
 
 @extend_schema(tags=['Components'])
