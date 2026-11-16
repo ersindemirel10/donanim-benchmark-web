@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt',  # Türkçe hata mesajı çevirileri için gerekli
     'corsheaders',
     'drf_spectacular',
     'benchmark',
