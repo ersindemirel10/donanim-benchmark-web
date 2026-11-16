@@ -66,6 +66,25 @@ class ComponentDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ComponentSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsCreatorOrReadOnly]
 
+    @extend_schema(
+        responses={
+            204: None,
+            403: OpenApiResponse(description='Parçayı sadece ekleyen kullanıcı silebilir'),
+            409: OpenApiResponse(description='Parça bir veya daha fazla sistemde kullanılıyor'),
+        }
+    )
+    def destroy(self, request, *args, **kwargs):
+        # get_object() önce 404 / 403 kontrollerini yapar, 409 en son gelir
+        component = self.get_object()
+        if component.builds.exists():
+            # Parça başka kullanıcıların sistemlerinde de olabilir, sessizce düşmesin
+            return Response(
+                {'detail': 'Bu parça bir veya daha fazla sistemde kullanılıyor, silinemez.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+        self.perform_destroy(component)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 @extend_schema(tags=['Builds'])
 class BuildListCreateView(generics.ListCreateAPIView):
@@ -101,8 +120,18 @@ def get_owned_build(request, build_id):
     return build
 
 
+class OwnedBuildMixin:
+    """Adresteki sistemi (build_id) istek başında bir kez kontrol eder: yoksa 404,
+    başkasınınsa 403. Doğrulama (400) bundan sonra çalışır, bu yüzden başkasının
+    sistemine hatalı veriyle istek atılsa bile cevap 403 olur."""
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)  # önce giriş (401) kontrolü
+        self.build = get_owned_build(request, kwargs['build_id'])
+
+
 @extend_schema(tags=['Profiles'])
-class ProfileListCreateView(generics.ListCreateAPIView):
+class ProfileListCreateView(OwnedBuildMixin, generics.ListCreateAPIView):
     """Bir sistemin ayar profilleri. GET: listele, POST: ekle (sadece sistemin sahibi)."""
 
     serializer_class = ProfileSerializer
@@ -111,11 +140,10 @@ class ProfileListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return TuningProfile.objects.none()
-        build = get_owned_build(self.request, self.kwargs['build_id'])
-        return build.profiles.order_by('id')
+        return self.build.profiles.order_by('id')
 
     def perform_create(self, serializer):
-        serializer.save(build=get_owned_build(self.request, self.kwargs['build_id']))
+        serializer.save(build=self.build)
 
 
 @extend_schema(tags=['Profiles'])
@@ -128,7 +156,7 @@ class ProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 @extend_schema(tags=['Runs'])
-class RunListCreateView(generics.ListCreateAPIView):
+class RunListCreateView(OwnedBuildMixin, generics.ListCreateAPIView):
     """Bir sistemin benchmark sonuçları. GET: listele (yeniden eskiye), POST: ekle.
     POST sırasında termal darboğaz backend tarafından otomatik tespit edilir."""
 
@@ -138,18 +166,17 @@ class RunListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return BenchmarkRun.objects.none()
-        build = get_owned_build(self.request, self.kwargs['build_id'])
-        return build.runs.order_by('-id')
+        return self.build.runs.order_by('-id')
 
     def get_serializer_context(self):
         # Serializer, seçilen profilin bu sisteme ait olup olmadığını kontrol edebilsin
         context = super().get_serializer_context()
         if not getattr(self, 'swagger_fake_view', False):
-            context['build'] = get_owned_build(self.request, self.kwargs['build_id'])
+            context['build'] = self.build
         return context
 
     def perform_create(self, serializer):
-        build = get_owned_build(self.request, self.kwargs['build_id'])
+        build = self.build
         data = serializer.validated_data
         # throttled alanlarını kullanıcı değil backend belirler
         throttled, reason = detect_throttle(

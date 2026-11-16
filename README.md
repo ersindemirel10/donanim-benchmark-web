@@ -84,7 +84,7 @@ Hepsinin başında `/api` var. Tam liste ve canlı deneme için Swagger sayfası
 
 Korumalı endpoint'leri Swagger'da denemek için `login` cevabındaki `access` token'ı sağ üstteki **Authorize** butonuna yapıştır (başına `Bearer` yazma). Access token 10 dakika geçerli.
 
-Dönen durum kodları: `200`, `201`, `204`, `400` (doğrulama hatası), `401` (giriş yok / token geçersiz), `403` (başkasının kaydı), `404`, `409` (kullanıcı adı/e-posta zaten var).
+Dönen durum kodları: `200`, `201`, `204`, `400` (doğrulama hatası), `401` (giriş yok / token geçersiz), `403` (başkasının kaydı), `404`, `409` (kullanıcı adı/e-posta zaten var, ya da silinmek istenen parça bir sistemde kullanılıyor).
 
 ## İş kuralları
 
