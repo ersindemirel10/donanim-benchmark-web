@@ -28,6 +28,15 @@ class ComponentSerializer(serializers.ModelSerializer):
             'max_temp_c', 'memory_gb', 'created_by',
         ]
         read_only_fields = ['id', 'created_by']  # created_by giriş yapan kullanıcıdan alınır
+        # Mantıksız değerleri engellemek için üst sınırlar (özellikle max_temp_c throttle tespitinde kullanılır)
+        extra_kwargs = {
+            'cores': {'max_value': 512},
+            'base_clock_mhz': {'max_value': 10000},
+            'boost_clock_mhz': {'max_value': 10000},
+            'tdp_w': {'max_value': 2000},
+            'max_temp_c': {'max_value': 150},
+            'memory_gb': {'max_value': 4096},
+        }
 
 
 class BuildSerializer(serializers.ModelSerializer):
@@ -78,6 +87,15 @@ class RunSerializer(serializers.ModelSerializer):
         ]
         # build adresten alınır; throttled / throttle_reason kullanıcıdan alınmaz
         read_only_fields = ['id', 'build', 'throttled', 'throttle_reason', 'created_at']
+        # Mantıksız ölçüm değerlerini engellemek için sınırlar (throttle tespiti sıcaklıklara bakar)
+        extra_kwargs = {
+            'score': {'min_value': 0},
+            'max_cpu_temp_c': {'max_value': 150},
+            'max_gpu_temp_c': {'max_value': 150},
+            'avg_cpu_clock_mhz': {'max_value': 10000},
+            'avg_gpu_clock_mhz': {'max_value': 10000},
+            'ambient_temp_c': {'min_value': -50, 'max_value': 60},
+        }
 
     def validate_profile(self, profile):
         build = self.context.get('build')
