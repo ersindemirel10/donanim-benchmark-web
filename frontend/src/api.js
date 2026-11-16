@@ -68,6 +68,8 @@ function refreshAccessToken() {
 }
 
 // ---- Ana istek fonksiyonu ----
+const NO_REFRESH_PATHS = ['/auth/login/', '/auth/register/', '/auth/refresh/']
+
 async function request(method, path, body, canRetry = true) {
   const headers = { 'Content-Type': 'application/json' }
   const access = getAccess()
@@ -86,7 +88,8 @@ async function request(method, path, body, canRetry = true) {
 
   // Access token süresi dolduysa bir kez yenileyip isteği tekrar dene.
   // Login/register/refresh isteklerinde bunu yapmayız (yanlış şifre de 401 döner).
-  if (res.status === 401 && canRetry && getRefresh() && !path.startsWith('/auth/')) {
+  // /auth/me/ token ile çalışır, o yüzden yenilenebilir.
+  if (res.status === 401 && canRetry && getRefresh() && !NO_REFRESH_PATHS.includes(path)) {
     try {
       await refreshAccessToken()
     } catch {
