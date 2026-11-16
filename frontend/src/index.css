@@ -120,3 +120,102 @@ button[type='submit']:disabled {
   opacity: 0.6;
   cursor: default;
 }
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hint {
+  color: #6b7280;
+  font-size: 0.9em;
+}
+
+.success,
+.error {
+  margin: 12px 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0 16px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.filters {
+  display: flex;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.filters select {
+  width: auto;
+  padding: 8px 10px;
+}
+
+.filters input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+th,
+td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+th {
+  background: #f3f4f6;
+  font-size: 0.85em;
+}
+
+.row-actions {
+  white-space: nowrap;
+  text-align: right;
+}
+
+button.small {
+  padding: 4px 10px;
+  margin-left: 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+button.small.danger {
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+button.secondary {
+  background: #e5e7eb;
+  color: #222;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1em;
+}
+
+.card {
+  margin: 16px 0;
+}
