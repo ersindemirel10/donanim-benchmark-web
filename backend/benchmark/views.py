@@ -167,6 +167,36 @@ class ComponentDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     @extend_schema(
         responses={
+            200: ComponentSerializer,
+            400: OpenApiResponse(description='Doğrulama hatası'),
+            403: OpenApiResponse(description='Parçayı sadece ekleyen kullanıcı düzenleyebilir'),
+            409: OpenApiResponse(
+                description='Parça bir sistemde kullanılıyor, türü ve max sıcaklığı değiştirilemez'
+            ),
+        }
+    )
+    def update(self, request, *args, **kwargs):
+        # Sıra: 404 / 403 (get_object), 400 (doğrulama), en son 409
+        partial = kwargs.pop('partial', False)
+        component = self.get_object()
+        serializer = self.get_serializer(component, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        if component.builds.exists():
+            # Tür ve max_temp_c, o parçayı kullanan sistemlerin test sonuçlarındaki
+            # throttle tespitini etkiler; kullanımdayken değişirse sonuçlar tutarsız kalır.
+            for field in ('type', 'max_temp_c'):
+                new = serializer.validated_data.get(field, getattr(component, field))
+                if new != getattr(component, field):
+                    return Response(
+                        {'detail': 'Bu parça bir sistemde kullanılıyor, türü ve maksimum '
+                                   'sıcaklığı değiştirilemez.'},
+                        status=status.HTTP_409_CONFLICT,
+                    )
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
+    @extend_schema(
+        responses={
             204: None,
             403: OpenApiResponse(description='Parçayı sadece ekleyen kullanıcı silebilir'),
             409: OpenApiResponse(description='Parça bir veya daha fazla sistemde kullanılıyor'),

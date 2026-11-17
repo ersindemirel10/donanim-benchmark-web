@@ -19,6 +19,19 @@ class RegisterSerializer(serializers.ModelSerializer):
         return User.objects.create_user(**validated_data)
 
 
+# Parça türüne göre zorunlu ve yasak alanlar (frontend formundaki alanlarla aynı)
+REQUIRED_BY_TYPE = {
+    'CPU': ['base_clock_mhz', 'boost_clock_mhz', 'tdp_w'],
+    'GPU': ['base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'memory_gb'],
+    'RAM': ['base_clock_mhz', 'memory_gb', 'memory_type', 'cas_latency'],
+}
+FORBIDDEN_BY_TYPE = {
+    'CPU': ['memory_gb', 'memory_type', 'cas_latency'],
+    'GPU': ['cores', 'memory_type', 'cas_latency'],
+    'RAM': ['cores', 'boost_clock_mhz', 'tdp_w', 'max_temp_c'],
+}
+
+
 class ComponentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Component
@@ -30,14 +43,36 @@ class ComponentSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_by']  # created_by giriş yapan kullanıcıdan alınır
         # Mantıksız değerleri engellemek için üst sınırlar (özellikle max_temp_c throttle tespitinde kullanılır)
         extra_kwargs = {
-            'cores': {'max_value': 512},
-            'base_clock_mhz': {'max_value': 10000},
-            'boost_clock_mhz': {'max_value': 10000},
-            'tdp_w': {'max_value': 2000},
-            'max_temp_c': {'max_value': 150},
-            'memory_gb': {'max_value': 4096},
+            'cores': {'min_value': 1, 'max_value': 512},
+            'base_clock_mhz': {'min_value': 1, 'max_value': 10000},
+            'boost_clock_mhz': {'min_value': 1, 'max_value': 10000},
+            'tdp_w': {'min_value': 1, 'max_value': 2000},
+            'max_temp_c': {'min_value': 1, 'max_value': 150},
+            'memory_gb': {'min_value': 1, 'max_value': 4096},
             'cas_latency': {'min_value': 9, 'max_value': 70},
         }
+
+    def validate(self, attrs):
+        # PATCH'te gelmeyen alanlar kayıttaki mevcut değerinden okunur
+        def value(field):
+            if field in attrs:
+                return attrs[field]
+            return getattr(self.instance, field, None) if self.instance else None
+
+        comp_type = value('type')
+        errors = {}
+        for field in REQUIRED_BY_TYPE.get(comp_type, []):
+            if value(field) is None:
+                errors[field] = f'{comp_type} için bu alan zorunludur.'
+        for field in FORBIDDEN_BY_TYPE.get(comp_type, []):
+            if value(field) is not None:
+                errors[field] = f'{comp_type} için bu alan boş olmalıdır.'
+        base, boost = value('base_clock_mhz'), value('boost_clock_mhz')
+        if comp_type != 'RAM' and base and boost and base > boost:
+            errors['boost_clock_mhz'] = 'Boost saat, baz saatten küçük olamaz.'
+        if errors:
+            raise serializers.ValidationError(errors)
+        return attrs
 
 
 class BuildSerializer(serializers.ModelSerializer):

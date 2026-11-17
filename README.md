@@ -130,6 +130,8 @@ Dönen durum kodları: `200`, `201`, `204`, `400` (doğrulama hatası), `401` (g
 - **Profil kıyaslama** (`/builds/{id}/compare/?software={id}`): Seçilen yazılımın testleri profile göre gruplanır; her profil için test sayısı, ortalama skor, en yüksek sıcaklıklar ve throttle sayısı. En yüksek ortalama skor üstte. Farklı yazılımların skorları karıştırılmadığı için yazılım seçmek zorunludur (yoksa `400`).
 - **Doğrulama:** Undervolt -250 ile 0 mV arasında, güç limiti 0'dan büyük olmalı. Test sonucuna seçilen profil aynı sisteme ait olmalı.
 - **Değer sınırları:** Mantıksız değerler reddedilir. Örneğin parçada `max_temp_c` en fazla 150, `tdp_w` en fazla 2000; RAM için CAS gecikmesi (`cas_latency`) 9 ile 70 arası ve bellek türü (`memory_type`) DDR4 veya DDR5; test sonucunda sıcaklıklar en fazla 150, ortam sıcaklığı -50 ile 60 arası, skor 0 veya büyük.
+- **Parça türüne göre alanlar:** CPU için baz/boost saat ve TDP zorunlu (çekirdek sayısı ve max sıcaklık isteğe bağlı), GPU için baz/boost saat, TDP ve VRAM zorunlu (çekirdek alanı yok; max sıcaklık isteğe bağlı). Boost, baz saatten küçük olamaz. RAM için hız, kapasite (GB), bellek türü ve CL zorunlu; RAM'de çekirdek, boost, TDP ve max sıcaklık boş olmalı. CPU'da bellek alanları, GPU'da çekirdek, bellek türü ve CL boş olmalı. PUT'ta gönderilmeyen alanlar kayıttaki eski değerinde kalır; arayüz tüm alanları gönderir, Swagger'dan tür değiştirirken ilgisiz alanlar açıkça `null` verilmelidir. Sayısal alanlar en az 1.
+- **Kullanımdaki parça:** Bir sistemde kullanılan parçanın türü ve `max_temp_c` değeri değiştirilemez (`409`), çünkü throttle tespiti buna dayanır. Diğer alanlar değişebilir.
 - **Silme:** Bir sistemde kullanılan parça silinemez (`409`). Bir test sonucunda kullanılan benchmark yazılımı da silinemez (`409`). Hesap silinirse kullanıcının sistemleri, profilleri ve test sonuçları silinir; parçaları ve eklediği yazılımlar katalogda sahipsiz kalır. Sistem silinirse profilleri ve test sonuçları da silinir. Profil silinirse testleri kalır, profilsiz görünür.
 - **Sahiplik:** Parçayı sadece ekleyen, sistemi/profili/test sonucunu sadece sistemin sahibi değiştirebilir.
 
@@ -137,7 +139,7 @@ Dönen durum kodları: `200`, `201`, `204`, `400` (doğrulama hatası), `401` (g
 
 - Token'lar `localStorage`'da saklanır. Basit ve ödev kapsamı için yeterli, ama XSS'e karşı `httpOnly` çerez kadar güvenli değildir.
 - `SECRET_KEY` ve `DEBUG` geliştirme ayarlarıdır; gerçek bir sunucuya çıkmadan önce ortam değişkenine taşınmalıdır.
-- Throttle (ısıl kısıtlama) bilgisi test sonucu eklenirken hesaplanır. Sonradan parçanın `max_temp_c` değeri değişirse eski sonuçlar güncellenmez.
+- Throttle (ısıl kısıtlama) bilgisi test sonucu eklenirken hesaplanır. Sistemde kullanılan bir parçanın `max_temp_c` değeri değiştirilemez, ama sistemin parça listesi sonradan değiştirilirse (parça eklenir/çıkarılırsa) eski sonuçlar yeniden hesaplanmaz.
 - Profil silinirse o profile ait testler silinmez, profilsiz kalır.
 - Giriş denemelerine hız sınırı (throttling) yoktur.
 - Kendi isteğinle çıkış yaptıktan sonra tarayıcının geri tuşuyla korumalı bir sayfaya dönersen, girişten sonra o sayfaya değil ana sayfaya gidilir.

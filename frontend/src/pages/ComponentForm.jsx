@@ -21,7 +21,14 @@ const RANGES = {
 // (Termal sınır sadece CPU/GPU için kullanılır, RAM'de saat alanı "hız" anlamına gelir.)
 const FIELDS_BY_TYPE = {
   CPU: ['cores', 'base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'max_temp_c'],
-  GPU: ['cores', 'base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'max_temp_c', 'memory_gb'],
+  GPU: ['base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'max_temp_c', 'memory_gb'],
+  RAM: ['base_clock_mhz', 'memory_gb', 'cas_latency'],
+}
+
+// Zorunlu alanlar (backend'deki REQUIRED_BY_TYPE ile aynı). Diğerleri isteğe bağlıdır.
+const REQUIRED_BY_TYPE = {
+  CPU: ['base_clock_mhz', 'boost_clock_mhz', 'tdp_w'],
+  GPU: ['base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'memory_gb'],
   RAM: ['base_clock_mhz', 'memory_gb', 'cas_latency'],
 }
 
@@ -136,11 +143,12 @@ export default function ComponentForm({ component, onSaved, onCancel }) {
         {FIELDS_BY_TYPE[form.type].map((field) => (
           <label key={field}>
             {labelFor(form.type, field)}
+            {!REQUIRED_BY_TYPE[form.type].includes(field) && ' (isteğe bağlı)'}
             <input
               type="number"
               min={RANGES[field]?.min ?? 0}
               max={RANGES[field]?.max}
-              required={form.type === 'RAM'}
+              required={REQUIRED_BY_TYPE[form.type].includes(field)}
               value={form[field]}
               onChange={(e) => change(field, e.target.value)}
             />
