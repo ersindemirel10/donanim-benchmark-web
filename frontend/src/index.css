@@ -219,3 +219,45 @@ button.secondary {
 .card {
   margin: 16px 0;
 }
+
+textarea {
+  font-family: inherit;
+}
+
+h4 {
+  margin: 16px 0 8px;
+}
+
+.picker {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin: 0 0 12px;
+  padding: 8px 12px;
+}
+
+.picker legend {
+  font-size: 0.85em;
+  font-weight: bold;
+  padding: 0 6px;
+}
+
+label.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+label.check input {
+  width: auto;
+  margin: 0;
+}
+
+.small-link {
+  margin-right: 6px;
+  font-size: 0.9em;
+}
+
+.btn.danger-btn {
+  background: #dc2626;
+}

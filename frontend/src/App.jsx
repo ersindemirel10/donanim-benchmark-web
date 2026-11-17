@@ -5,6 +5,7 @@ import Home from './pages/Home.jsx'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Builds from './pages/Builds.jsx'
+import BuildDetail from './pages/BuildDetail.jsx'
 import Components from './pages/Components.jsx'
 
 function NotFound() {
@@ -56,6 +57,7 @@ export default function App() {
           {/* Giriş gerektiren sayfalar */}
           <Route element={<ProtectedRoute />}>
             <Route path="/builds" element={<Builds />} />
+            <Route path="/builds/:id" element={<BuildDetail />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />
