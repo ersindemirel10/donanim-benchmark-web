@@ -3,6 +3,14 @@ import { api } from '../api.js'
 import { useAuth } from '../auth/AuthContext.jsx'
 import ComponentForm from './ComponentForm.jsx'
 
+// Saat sütunu: CPU/GPU için "temel / boost", RAM için sadece hız, boşsa "-"
+function clockText(c) {
+  if (c.base_clock_mhz == null && c.boost_clock_mhz == null) return '-'
+  if (c.boost_clock_mhz == null) return c.base_clock_mhz
+  if (c.base_clock_mhz == null) return c.boost_clock_mhz
+  return `${c.base_clock_mhz} / ${c.boost_clock_mhz}`
+}
+
 export default function Components() {
   const { user } = useAuth()
 
@@ -108,6 +116,7 @@ export default function Components() {
               <th>Marka</th>
               <th>Model</th>
               <th>Çekirdek</th>
+              <th>Saat (MHz)</th>
               <th>TDP (W)</th>
               <th>Maks. °C</th>
               <th>Bellek (GB)</th>
@@ -121,6 +130,7 @@ export default function Components() {
                 <td>{c.brand}</td>
                 <td>{c.name}</td>
                 <td>{c.cores ?? '-'}</td>
+                <td>{clockText(c)}</td>
                 <td>{c.tdp_w ?? '-'}</td>
                 <td>{c.max_temp_c ?? '-'}</td>
                 <td>{c.memory_gb ?? '-'}</td>
