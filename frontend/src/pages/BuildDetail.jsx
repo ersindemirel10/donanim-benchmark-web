@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api.js'
 import BuildForm from './BuildForm.jsx'
+import ProfilesTab from './ProfilesTab.jsx'
 
 export default function BuildDetail() {
   const { id } = useParams() // adresteki /builds/:id kısmı
@@ -13,6 +14,7 @@ export default function BuildDetail() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [editing, setEditing] = useState(false)
+  const [tab, setTab] = useState('general') // general | profiles
 
   // Sistem ve parça kataloğu birlikte çekilir (parça id'lerini isme çevirmek için)
   useEffect(() => {
@@ -68,7 +70,13 @@ export default function BuildDetail() {
         <h2>{build.name}</h2>
         {!editing && (
           <div className="actions">
-            <button className="btn" onClick={() => setEditing(true)}>
+            <button
+              className="btn"
+              onClick={() => {
+                setTab('general')
+                setEditing(true)
+              }}
+            >
               Düzenle
             </button>
             <button className="btn danger-btn" onClick={handleDelete}>
@@ -81,7 +89,18 @@ export default function BuildDetail() {
       {error && <p className="error">{error}</p>}
       {success && <p className="success">{success}</p>}
 
-      {editing ? (
+      <div className="tabs">
+        <button className={tab === 'general' ? 'tab active' : 'tab'} onClick={() => setTab('general')}>
+          Genel
+        </button>
+        <button className={tab === 'profiles' ? 'tab active' : 'tab'} onClick={() => setTab('profiles')}>
+          Profiller
+        </button>
+      </div>
+
+      {tab === 'profiles' && <ProfilesTab buildId={build.id} />}
+
+      {tab === 'general' && (editing ? (
         <BuildForm build={build} onSaved={handleSaved} onCancel={() => setEditing(false)} />
       ) : (
         <div className="card">
@@ -107,7 +126,7 @@ export default function BuildDetail() {
             </ul>
           )}
         </div>
-      )}
+      ))}
     </div>
   )
 }
