@@ -89,7 +89,8 @@ Hepsinin başında `/api` var. Tam liste ve canlı deneme için Swagger sayfası
 | POST | `/auth/register/` | Kayıt | Hayır |
 | POST | `/auth/login/` | Giriş, JWT token verir | Hayır |
 | POST | `/auth/refresh/` | Access token yeniler | Hayır |
-| GET | `/auth/me/` | Giriş yapan kullanıcının id, kullanıcı adı, e-postası | Evet |
+| GET, PUT, PATCH, DELETE | `/auth/me/` | Kendi hesabın: bilgileri gör, kullanıcı adı/e-posta güncelle, hesabı sil (gövdede `password` ister) | Evet |
+| POST | `/auth/change-password/` | Şifre değiştir (`old_password`, `new_password`) | Evet |
 
 **Parçalar** (herkese açık katalog, değiştirme/silme sadece ekleyen kullanıcı)
 | Metot | Adres | Giriş |
@@ -128,7 +129,7 @@ Dönen durum kodları: `200`, `201`, `204`, `400` (doğrulama hatası), `401` (g
 - **Profil kıyaslama** (`/builds/{id}/compare/?software={id}`): Seçilen yazılımın testleri profile göre gruplanır; her profil için test sayısı, ortalama skor, en yüksek sıcaklıklar ve throttle sayısı. En yüksek ortalama skor üstte. Farklı yazılımların skorları karıştırılmadığı için yazılım seçmek zorunludur (yoksa `400`).
 - **Doğrulama:** Undervolt -250 ile 0 mV arasında, güç limiti 0'dan büyük olmalı. Test sonucuna seçilen profil aynı sisteme ait olmalı.
 - **Değer sınırları:** Mantıksız değerler reddedilir. Örneğin parçada `max_temp_c` en fazla 150, `tdp_w` en fazla 2000; RAM için CAS gecikmesi (`cas_latency`) 9 ile 70 arası ve bellek türü (`memory_type`) DDR4 veya DDR5; test sonucunda sıcaklıklar en fazla 150, ortam sıcaklığı -50 ile 60 arası, skor 0 veya büyük.
-- **Silme:** Bir sistemde kullanılan parça silinemez (`409`). Bir test sonucunda kullanılan benchmark yazılımı da silinemez (`409`). Sistem silinirse profilleri ve test sonuçları da silinir. Profil silinirse testleri kalır, profilsiz görünür.
+- **Silme:** Bir sistemde kullanılan parça silinemez (`409`). Bir test sonucunda kullanılan benchmark yazılımı da silinemez (`409`). Hesap silinirse kullanıcının sistemleri, profilleri ve test sonuçları silinir; parçaları ve eklediği yazılımlar katalogda sahipsiz kalır. Sistem silinirse profilleri ve test sonuçları da silinir. Profil silinirse testleri kalır, profilsiz görünür.
 - **Sahiplik:** Parçayı sadece ekleyen, sistemi/profili/test sonucunu sadece sistemin sahibi değiştirebilir.
 
 ## Durum

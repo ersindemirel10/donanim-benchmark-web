@@ -13,7 +13,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'password']
-        extra_kwargs = {'email': {'required': True}}
+        extra_kwargs = {'email': {'required': True, 'allow_blank': False}}
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
@@ -149,3 +149,27 @@ class MeSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email']
+
+
+class MeUpdateSerializer(serializers.ModelSerializer):
+    """Hesap bilgilerini güncelleme: kullanıcı adı ve e-posta (şifre ayrı uçtan değişir)."""
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email']
+        read_only_fields = ['id']
+        extra_kwargs = {'email': {'required': True, 'allow_blank': False}}
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+
+    def validate_new_password(self, value):
+        # Django'nun şifre kuralları (kullanıcı adına benzerlik, çok kısa, sadece rakam vb.)
+        validate_password(value, user=self.context['request'].user)
+        return value
+
+
+class DeleteAccountSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True)

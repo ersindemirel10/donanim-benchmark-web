@@ -1,7 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Avg, Count, Max, Q
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
+from drf_spectacular.utils import (
+    OpenApiParameter, OpenApiResponse, extend_schema, extend_schema_view,
+)
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
@@ -10,7 +12,8 @@ from rest_framework.views import APIView
 from .models import BenchmarkRun, BenchmarkSoftware, Component, SystemBuild, TuningProfile
 from .permissions import IsBuildOwner, IsCreatorOrReadOnly
 from .serializers import (
-    BuildSerializer, CompareSerializer, ComponentSerializer, MeSerializer,
+    BuildSerializer, ChangePasswordSerializer, CompareSerializer, ComponentSerializer,
+    DeleteAccountSerializer, MeSerializer, MeUpdateSerializer,
     ProfileSerializer, RegisterSerializer,
     RunSerializer, RunUpdateSerializer, SoftwareSerializer,
 )
@@ -47,15 +50,99 @@ class RegisterView(generics.CreateAPIView):
         return super().create(request, *args, **kwargs)
 
 
-@extend_schema(tags=['Auth'], summary='Giriş yapan kullanıcının bilgileri')
-class MeView(generics.RetrieveAPIView):
-    """Frontend, sahiplik kontrolü (hangi kayıtlar benim?) için kullanıcı id'sine ihtiyaç duyar."""
+_update_responses = {
+    200: MeSerializer,
+    400: OpenApiResponse(description='Doğrulama hatası'),
+    409: OpenApiResponse(description='Kullanıcı adı veya e-posta başka bir hesapta kayıtlı'),
+}
 
-    serializer_class = MeSerializer
+
+@extend_schema(tags=['Auth'])
+@extend_schema_view(
+    get=extend_schema(summary='Giriş yapan kullanıcının bilgileri'),
+    put=extend_schema(
+        summary='Hesap bilgilerini güncelle', request=MeUpdateSerializer, responses=_update_responses
+    ),
+    patch=extend_schema(
+        summary='Hesap bilgilerini kısmen güncelle',
+        request=MeUpdateSerializer,
+        responses=_update_responses,
+    ),
+    delete=extend_schema(
+        summary='Hesabı sil (şifre gerekir)',
+        request=DeleteAccountSerializer,
+        responses={
+            204: None,
+            400: OpenApiResponse(description='Şifre eksik veya yanlış'),
+        },
+    ),
+)
+class MeView(generics.RetrieveUpdateDestroyAPIView):
+    """Giriş yapan kullanıcının kendi hesabı. GET: bilgiler. PUT/PATCH: kullanıcı adı ve e-posta.
+    DELETE: hesabı siler. Frontend ayrıca sahiplik kontrolü için kullanıcı id'sini buradan alır."""
+
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.request.method in ('PUT', 'PATCH'):
+            return MeUpdateSerializer
+        return MeSerializer
 
     def get_object(self):
         return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+        username = request.data.get('username')
+        email = request.data.get('email')
+        # Kayıttaki gibi: başka bir hesapta varsa 409 (kendi mevcut değeri sorun değil)
+        if username and User.objects.filter(username=username).exclude(pk=user.pk).exists():
+            return Response(
+                {'detail': 'Bu kullanıcı adı zaten kayıtlı.'}, status=status.HTTP_409_CONFLICT
+            )
+        if email and User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
+            return Response(
+                {'detail': 'Bu e-posta zaten kayıtlı.'}, status=status.HTTP_409_CONFLICT
+            )
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        serializer = DeleteAccountSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = self.get_object()
+        if not user.check_password(serializer.validated_data['password']):
+            return Response(
+                {'password': ['Şifre yanlış.']}, status=status.HTTP_400_BAD_REQUEST
+            )
+        # Kullanıcının sistemleri (profilleri ve testleriyle) silinir; parçaları ve
+        # eklediği yazılımlar katalogda sahipsiz kalır (created_by SET_NULL).
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(
+    tags=['Auth'],
+    summary='Şifre değiştir',
+    request=ChangePasswordSerializer,
+    responses={
+        200: OpenApiResponse(description='Şifre değiştirildi'),
+        400: OpenApiResponse(description='Eski şifre yanlış veya yeni şifre geçersiz'),
+    },
+)
+class ChangePasswordView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = request.user
+        if not user.check_password(serializer.validated_data['old_password']):
+            return Response(
+                {'old_password': ['Eski şifre yanlış.']}, status=status.HTTP_400_BAD_REQUEST
+            )
+        user.set_password(serializer.validated_data['new_password'])
+        user.save()
+        return Response({'detail': 'Şifre değiştirildi.'})
 
 
 @extend_schema(tags=['Components'])

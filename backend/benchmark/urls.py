@@ -3,7 +3,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .views import (
-    BuildCompareView, BuildDetailView, BuildListCreateView,
+    BuildCompareView, BuildDetailView, BuildListCreateView, ChangePasswordView,
     ComponentDetailView, ComponentListCreateView, MeView,
     ProfileDetailView, ProfileListCreateView, RegisterView,
     RunDetailView, RunListCreateView, SoftwareDetailView, SoftwareListCreateView,
@@ -17,6 +17,7 @@ urlpatterns = [
     path('auth/login/', LoginView.as_view(), name='login'),
     path('auth/refresh/', RefreshView.as_view(), name='token-refresh'),
     path('auth/me/', MeView.as_view(), name='me'),
+    path('auth/change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('components/', ComponentListCreateView.as_view(), name='component-list'),
     path('components/<int:pk>/', ComponentDetailView.as_view(), name='component-detail'),
     path('software/', SoftwareListCreateView.as_view(), name='software-list'),
