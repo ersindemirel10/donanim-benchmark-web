@@ -10,7 +10,7 @@ Kullanıcılar PC/laptop sistemlerini ve donanım parçalarını kaydedip, farkl
 - **Kimlik doğrulama:** JWT (djangorestframework-simplejwt)
 - **API dokümantasyonu:** Swagger (drf-spectacular)
 - **Veritabanı:** SQLite
-- **Frontend:** React (henüz başlanmadı)
+- **Frontend:** React (Vite), react-router-dom, düz `fetch`
 
 ## Klasör yapısı
 
@@ -21,7 +21,11 @@ donanim-benchmark-web/
 │   ├── benchmark/       # Uygulama: modeller, serializer, view, URL, izinler
 │   ├── manage.py
 │   └── requirements.txt
-├── frontend/            # React uygulaması (sonra)
+├── frontend/
+│   └── src/
+│       ├── api.js       # Backend istekleri, token ekleme ve yenileme, hata mesajları
+│       ├── auth/        # Oturum yönetimi ve korumalı sayfa
+│       └── pages/       # Sayfalar (giriş, parçalar, sistemler, profiller, testler, kıyas)
 └── README.md
 ```
 
@@ -39,6 +43,28 @@ python manage.py runserver
 Sunucu açılınca Swagger sayfası: http://127.0.0.1:8000/api/docs/
 
 Not: `activate` komutundan sonra satırın başında `(venv)` yazmalı.
+
+### Frontend
+
+Backend açıkken ayrı bir terminalde (Node.js gerekli):
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Arayüz: http://localhost:5173
+
+Backend CORS ayarı sadece `localhost:5173` ve `127.0.0.1:5173` için açık, o yüzden frontend bu portta çalışmalı. Backend adresi varsayılan olarak `http://127.0.0.1:8000/api`; değiştirmek için `frontend/.env` dosyasına `VITE_API_URL=...` yazılabilir.
+
+**Arayüzde yapılanlar**
+- Kayıt, giriş, çıkış. Token'lar tarayıcıda (`localStorage`) saklanır, sayfa yenilenince oturum devam eder. Access token (10 dk) dolunca refresh token ile otomatik yenilenir; o da geçersizse oturum kapanır.
+- Parçalar: herkes görebilir, giriş yapan ekleyebilir, düzenle/sil sadece parçayı ekleyen kullanıcıya görünür.
+- Sistemler: liste, ekleme (parça seçerek), detay, düzenleme, silme.
+- Sistem detayında sekmeler: Genel, Profiller, Testler, Kıyas.
+- Testlerde throttle olanlar kırmızı işaretlenir ve sebebi gösterilir. Test sonucunda sadece not düzenlenebilir.
+- API'nin döndürdüğü hata mesajları (400, 401, 403, 404, 409) ve başarı mesajları ekranda gösterilir.
 
 ## Veri modelleri
 
@@ -92,17 +118,10 @@ Dönen durum kodları: `200`, `201`, `204`, `400` (doğrulama hatası), `401` (g
 - **Termal darboğaz tespiti** (`benchmark/services.py`): Test sonucu eklenirken ölçülen en yüksek CPU/GPU sıcaklığı, sistemdeki parçanın `max_temp_c` sınırına ulaştıysa `throttled` ve `throttle_reason` alanlarını backend doldurur. Kullanıcı bu alanları gönderse de dikkate alınmaz.
 - **Profil kıyaslama** (`/builds/{id}/compare/`): Her profil için test sayısı, ortalama skor, en yüksek sıcaklıklar ve throttle sayısı. En yüksek ortalama skor üstte.
 - **Doğrulama:** Undervolt -250 ile 0 mV arasında, güç limiti 0'dan büyük olmalı. Test sonucuna seçilen profil aynı sisteme ait olmalı.
+- **Değer sınırları:** Mantıksız değerler reddedilir. Örneğin parçada `max_temp_c` en fazla 150, `tdp_w` en fazla 2000; test sonucunda sıcaklıklar en fazla 150, ortam sıcaklığı -50 ile 60 arası, skor 0 veya büyük.
+- **Silme:** Bir sistemde kullanılan parça silinemez (`409`). Sistem silinirse profilleri ve test sonuçları da silinir. Profil silinirse testleri kalır, profilsiz görünür.
 - **Sahiplik:** Parçayı sadece ekleyen, sistemi/profili/test sonucunu sadece sistemin sahibi değiştirebilir.
 
 ## Durum
 
-**Yapıldı**
-- Proje iskeleti, veritabanı modelleri ve migration'lar
-- Kayıt, giriş ve JWT kimlik doğrulama
-- Swagger entegrasyonu
-- Parça, sistem, ayar profili ve test sonucu için CRUD ve sahiplik kontrolleri
-- Termal darboğaz tespiti ve profil kıyaslama
-- React için CORS ayarı
-
-**Yapılacak**
-- React arayüzü
+Backend ve React arayüzü tamamlandı. Ödevdeki tüm özellikler (kayıt/giriş, yetkilendirme, 5 varlık için CRUD, hata/başarı mesajları, oturum yönetimi) arayüzden de kullanılabiliyor.
