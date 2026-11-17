@@ -322,3 +322,21 @@ label.check input {
 tr.throttled-row {
   background: #fff5f5;
 }
+
+.badge.best {
+  margin-left: 8px;
+}
+
+.bar {
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  margin-top: 4px;
+  width: 120px;
+}
+
+.bar-fill {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 3px;
+}

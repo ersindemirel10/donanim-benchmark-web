@@ -4,6 +4,7 @@ import { api } from '../api.js'
 import BuildForm from './BuildForm.jsx'
 import ProfilesTab from './ProfilesTab.jsx'
 import RunsTab from './RunsTab.jsx'
+import CompareTab from './CompareTab.jsx'
 
 export default function BuildDetail() {
   const { id } = useParams() // adresteki /builds/:id kısmı
@@ -15,7 +16,7 @@ export default function BuildDetail() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [editing, setEditing] = useState(false)
-  const [tab, setTab] = useState('general') // general | profiles | runs
+  const [tab, setTab] = useState('general') // general | profiles | runs | compare
 
   // Sistem ve parça kataloğu birlikte çekilir (parça id'lerini isme çevirmek için)
   useEffect(() => {
@@ -100,10 +101,14 @@ export default function BuildDetail() {
         <button className={tab === 'runs' ? 'tab active' : 'tab'} onClick={() => setTab('runs')}>
           Testler
         </button>
+        <button className={tab === 'compare' ? 'tab active' : 'tab'} onClick={() => setTab('compare')}>
+          Kıyas
+        </button>
       </div>
 
       {tab === 'profiles' && <ProfilesTab buildId={build.id} />}
       {tab === 'runs' && <RunsTab buildId={build.id} />}
+      {tab === 'compare' && <CompareTab buildId={build.id} />}
 
       {tab === 'general' && (editing ? (
         <BuildForm build={build} onSaved={handleSaved} onCancel={() => setEditing(false)} />
