@@ -61,6 +61,7 @@ Backend CORS ayarı sadece `localhost:5173` ve `127.0.0.1:5173` için açık, o 
 **Arayüzde yapılanlar**
 - Kayıt, giriş, çıkış. Token'lar tarayıcıda (`localStorage`) saklanır, sayfa yenilenince oturum devam eder. Access token (10 dk) dolunca refresh token ile otomatik yenilenir; o da geçersizse oturum kapanır.
 - Parçalar: herkes görebilir, giriş yapan ekleyebilir, düzenle/sil sadece parçayı ekleyen kullanıcıya görünür.
+- Parça formu türe göre değişir: örneğin RAM için çekirdek/TDP/sıcaklık sorulmaz, bellek türü (DDR4/DDR5), hız, bellek ve CL sorulur. RAM'in model adı bu özelliklerden otomatik oluşturulur (örn. `DDR5-6000 CL30 16GB`).
 - Sistemler: liste, ekleme (parça seçerek), detay, düzenleme, silme.
 - Sistem detayında sekmeler: Genel, Profiller, Testler, Kıyas.
 - Testlerde throttle olanlar kırmızı işaretlenir ve sebebi gösterilir. Test sonucunda sadece not düzenlenebilir.
@@ -118,7 +119,7 @@ Dönen durum kodları: `200`, `201`, `204`, `400` (doğrulama hatası), `401` (g
 - **Termal darboğaz tespiti** (`benchmark/services.py`): Test sonucu eklenirken ölçülen en yüksek CPU/GPU sıcaklığı, sistemdeki parçanın `max_temp_c` sınırına ulaştıysa `throttled` ve `throttle_reason` alanlarını backend doldurur. Kullanıcı bu alanları gönderse de dikkate alınmaz.
 - **Profil kıyaslama** (`/builds/{id}/compare/`): Her profil için test sayısı, ortalama skor, en yüksek sıcaklıklar ve throttle sayısı. En yüksek ortalama skor üstte.
 - **Doğrulama:** Undervolt -250 ile 0 mV arasında, güç limiti 0'dan büyük olmalı. Test sonucuna seçilen profil aynı sisteme ait olmalı.
-- **Değer sınırları:** Mantıksız değerler reddedilir. Örneğin parçada `max_temp_c` en fazla 150, `tdp_w` en fazla 2000; test sonucunda sıcaklıklar en fazla 150, ortam sıcaklığı -50 ile 60 arası, skor 0 veya büyük.
+- **Değer sınırları:** Mantıksız değerler reddedilir. Örneğin parçada `max_temp_c` en fazla 150, `tdp_w` en fazla 2000; RAM için CAS gecikmesi (`cas_latency`) 9 ile 70 arası ve bellek türü (`memory_type`) DDR4 veya DDR5; test sonucunda sıcaklıklar en fazla 150, ortam sıcaklığı -50 ile 60 arası, skor 0 veya büyük.
 - **Silme:** Bir sistemde kullanılan parça silinemez (`409`). Sistem silinirse profilleri ve test sonuçları da silinir. Profil silinirse testleri kalır, profilsiz görünür.
 - **Sahiplik:** Parçayı sadece ekleyen, sistemi/profili/test sonucunu sadece sistemin sahibi değiştirebilir.
 

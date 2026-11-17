@@ -9,6 +9,12 @@ const LABELS = {
   tdp_w: 'TDP (W)',
   max_temp_c: 'Maksimum sıcaklık (°C)',
   memory_gb: 'Bellek (GB)',
+  cas_latency: 'CAS gecikmesi (CL)',
+}
+
+// Backend'deki sınırlarla aynı (sayı alanlarının min/max değerleri)
+const RANGES = {
+  cas_latency: { min: 9, max: 70 },
 }
 
 // Parça türüne göre anlamlı alanlar. Diğerleri formda gösterilmez ve backend'e null gider.
@@ -16,7 +22,7 @@ const LABELS = {
 const FIELDS_BY_TYPE = {
   CPU: ['cores', 'base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'max_temp_c'],
   GPU: ['cores', 'base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'max_temp_c', 'memory_gb'],
-  RAM: ['base_clock_mhz', 'memory_gb'],
+  RAM: ['base_clock_mhz', 'memory_gb', 'cas_latency'],
 }
 
 function labelFor(type, field) {
@@ -27,11 +33,17 @@ function labelFor(type, field) {
 
 const ALL_FIELDS = Object.keys(LABELS)
 
+// RAM'in model adı sorulmaz, özelliklerinden üretilir. Örn: DDR5-6000 CL30 16GB
+function ramName(form) {
+  return `${form.memory_type}-${form.base_clock_mhz} CL${form.cas_latency} ${form.memory_gb}GB`
+}
+
 function toFormState(component) {
   const state = {
     type: component?.type ?? 'CPU',
     brand: component?.brand ?? '',
     name: component?.name ?? '',
+    memory_type: component?.memory_type ?? '',
   }
   for (const field of ALL_FIELDS) {
     state[field] = component?.[field] ?? ''
@@ -40,7 +52,13 @@ function toFormState(component) {
 }
 
 function toPayload(form) {
-  const payload = { type: form.type, brand: form.brand, name: form.name }
+  const isRam = form.type === 'RAM'
+  const payload = {
+    type: form.type,
+    brand: form.brand,
+    name: isRam ? ramName(form) : form.name,
+    memory_type: isRam ? form.memory_type : null,
+  }
   const visible = FIELDS_BY_TYPE[form.type]
   for (const field of ALL_FIELDS) {
     // Türe uymayan alanlar (örn. RAM'de çekirdek) her zaman null gönderilir
@@ -94,17 +112,35 @@ export default function ComponentForm({ component, onSaved, onCancel }) {
           Marka
           <input value={form.brand} onChange={(e) => change('brand', e.target.value)} required />
         </label>
-        <label>
-          Model adı
-          <input value={form.name} onChange={(e) => change('name', e.target.value)} required />
-        </label>
+        {form.type !== 'RAM' && (
+          <label>
+            Model adı
+            <input value={form.name} onChange={(e) => change('name', e.target.value)} required />
+          </label>
+        )}
+        {form.type === 'RAM' && (
+          <label>
+            Bellek türü
+            <select
+              value={form.memory_type}
+              onChange={(e) => change('memory_type', e.target.value)}
+              required
+            >
+              <option value="">Seçiniz</option>
+              <option value="DDR4">DDR4</option>
+              <option value="DDR5">DDR5</option>
+            </select>
+          </label>
+        )}
 
         {FIELDS_BY_TYPE[form.type].map((field) => (
           <label key={field}>
             {labelFor(form.type, field)}
             <input
               type="number"
-              min="0"
+              min={RANGES[field]?.min ?? 0}
+              max={RANGES[field]?.max}
+              required={form.type === 'RAM'}
               value={form[field]}
               onChange={(e) => change(field, e.target.value)}
             />
@@ -112,6 +148,15 @@ export default function ComponentForm({ component, onSaved, onCancel }) {
         ))}
       </div>
 
+      {form.type === 'RAM' && (
+        <p className="hint">
+          Model adı sorulmaz, özelliklerden otomatik oluşturulur
+          {form.memory_type && form.base_clock_mhz && form.cas_latency && form.memory_gb
+            ? `: ${ramName(form)}`
+            : '.'}{' '}
+          CAS gecikmesi (CL) 9 ile 70 arasında olmalı.
+        </p>
+      )}
       {form.type !== 'RAM' && (
         <p className="hint">
           Maksimum sıcaklık, bu parçanın termal sınırıdır. Benchmark sırasında ölçülen sıcaklık bu
