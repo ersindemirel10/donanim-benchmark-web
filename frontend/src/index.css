@@ -373,3 +373,16 @@ tr.throttled-row {
   border-radius: 6px;
   font-size: 1em;
 }
+
+/* Hesabım sayfası */
+.narrow-stack .card {
+  margin-bottom: 20px;
+}
+
+.danger-zone {
+  border: 1px solid #fca5a5;
+}
+
+button[type='submit'].danger {
+  background: #dc2626;
+}

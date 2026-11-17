@@ -25,7 +25,7 @@ donanim-benchmark-web/
 │   └── src/
 │       ├── api.js       # Backend istekleri, token ekleme ve yenileme, hata mesajları
 │       ├── auth/        # Oturum yönetimi ve korumalı sayfa
-│       └── pages/       # Sayfalar (giriş, parçalar, sistemler, profiller, testler, kıyas)
+│       └── pages/       # Sayfalar (giriş, hesabım, parçalar, sistemler, profiller, testler, kıyas)
 └── README.md
 ```
 
@@ -60,6 +60,7 @@ Backend CORS ayarı sadece `localhost:5173` ve `127.0.0.1:5173` için açık, o 
 
 **Arayüzde yapılanlar**
 - Kayıt, giriş, çıkış. Token'lar tarayıcıda (`localStorage`) saklanır, sayfa yenilenince oturum devam eder. Access token (10 dk) dolunca refresh token ile otomatik yenilenir; o da geçersizse oturum kapanır.
+- Hesabım (sağ üstte kullanıcı adına tıklayınca): kullanıcı adı/e-posta güncelleme, şifre değiştirme, hesabı silme (şifre ister).
 - Parçalar: herkes görebilir, giriş yapan ekleyebilir, düzenle/sil sadece parçayı ekleyen kullanıcıya görünür.
 - Yazılımlar: benchmark yazılımı listesi; test eklerken yazılım bu listeden seçilir. Düzenle/sil sadece ekleyen kullanıcıya görünür, hazır kayıtlar değiştirilemez.
 - Parça formu türe göre değişir: örneğin RAM için çekirdek/TDP/sıcaklık sorulmaz, bellek türü (DDR4/DDR5), hız, bellek ve CL sorulur. RAM'in model adı bu özelliklerden otomatik oluşturulur (örn. `DDR5-6000 CL30 16GB`).
@@ -131,6 +132,15 @@ Dönen durum kodları: `200`, `201`, `204`, `400` (doğrulama hatası), `401` (g
 - **Değer sınırları:** Mantıksız değerler reddedilir. Örneğin parçada `max_temp_c` en fazla 150, `tdp_w` en fazla 2000; RAM için CAS gecikmesi (`cas_latency`) 9 ile 70 arası ve bellek türü (`memory_type`) DDR4 veya DDR5; test sonucunda sıcaklıklar en fazla 150, ortam sıcaklığı -50 ile 60 arası, skor 0 veya büyük.
 - **Silme:** Bir sistemde kullanılan parça silinemez (`409`). Bir test sonucunda kullanılan benchmark yazılımı da silinemez (`409`). Hesap silinirse kullanıcının sistemleri, profilleri ve test sonuçları silinir; parçaları ve eklediği yazılımlar katalogda sahipsiz kalır. Sistem silinirse profilleri ve test sonuçları da silinir. Profil silinirse testleri kalır, profilsiz görünür.
 - **Sahiplik:** Parçayı sadece ekleyen, sistemi/profili/test sonucunu sadece sistemin sahibi değiştirebilir.
+
+## Bilinen sınırlamalar
+
+- Token'lar `localStorage`'da saklanır. Basit ve ödev kapsamı için yeterli, ama XSS'e karşı `httpOnly` çerez kadar güvenli değildir.
+- `SECRET_KEY` ve `DEBUG` geliştirme ayarlarıdır; gerçek bir sunucuya çıkmadan önce ortam değişkenine taşınmalıdır.
+- Throttle (ısıl kısıtlama) bilgisi test sonucu eklenirken hesaplanır. Sonradan parçanın `max_temp_c` değeri değişirse eski sonuçlar güncellenmez.
+- Profil silinirse o profile ait testler silinmez, profilsiz kalır.
+- Giriş denemelerine hız sınırı (throttling) yoktur.
+- Kendi isteğinle çıkış yaptıktan sonra tarayıcının geri tuşuyla korumalı bir sayfaya dönersen, girişten sonra o sayfaya değil ana sayfaya gidilir.
 
 ## Durum
 

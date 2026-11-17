@@ -8,6 +8,7 @@ import Builds from './pages/Builds.jsx'
 import BuildDetail from './pages/BuildDetail.jsx'
 import Components from './pages/Components.jsx'
 import Software from './pages/Software.jsx'
+import Account from './pages/Account.jsx'
 
 function NotFound() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
   const navigate = useNavigate()
 
   function handleLogout() {
+    // Korumalı sayfadaysak ProtectedRoute da /login'e yönlendirir (dönüş adresi olmadan)
     logout()
     navigate('/login')
   }
@@ -39,7 +41,7 @@ export default function App() {
         <span className="spacer" />
         {user ? (
           <>
-            <span className="username">{user.username}</span>
+            <NavLink to="/account" className="username">{user.username}</NavLink>
             <button className="link-button" onClick={handleLogout}>Çıkış</button>
           </>
         ) : (
@@ -70,6 +72,7 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/builds" element={<Builds />} />
             <Route path="/builds/:id" element={<BuildDetail />} />
+            <Route path="/account" element={<Account />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />
