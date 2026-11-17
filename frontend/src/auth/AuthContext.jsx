@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { api, clearTokens, getAccess, saveTokens } from '../api.js'
 
 const AuthContext = createContext(null)
@@ -9,16 +9,34 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   // loading: sayfa ilk açılırken token'ın geçerli olup olmadığı kontrol ediliyor
   const [loading, setLoading] = useState(Boolean(getAccess()))
+  // offline: sunucuya ulaşılamadı, ama oturum bilgisi (token'lar) korunuyor
+  const [offline, setOffline] = useState(false)
+
+  // Token ile kullanıcıyı sunucudan yükler
+  const loadUser = useCallback(() => {
+    return api
+      .get('/auth/me/')
+      .then((me) => {
+        setUser(me)
+        setOffline(false)
+      })
+      .catch((err) => {
+        if (err.status === 401) clearTokens() // oturum gerçekten geçersiz
+        else setOffline(true) // ağ/sunucu hatası: çıkış yaptırma
+      })
+      .finally(() => setLoading(false))
+  }, [])
 
   // Sayfa yenilenince token varsa kullanıcıyı geri yükle
   useEffect(() => {
-    if (!getAccess()) return
-    api
-      .get('/auth/me/')
-      .then(setUser)
-      .catch(() => clearTokens())
-      .finally(() => setLoading(false))
-  }, [])
+    if (getAccess()) loadUser()
+  }, [loadUser])
+
+  // "Tekrar dene" butonu için
+  function retry() {
+    setLoading(true)
+    loadUser()
+  }
 
   // api.js refresh de başarısız olursa bu olayı gönderir: oturumu kapat
   useEffect(() => {
@@ -44,7 +62,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, register }}>
+    <AuthContext.Provider value={{ user, loading, offline, retry, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   )

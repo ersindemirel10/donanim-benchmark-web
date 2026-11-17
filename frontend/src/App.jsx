@@ -19,7 +19,7 @@ function NotFound() {
 }
 
 export default function App() {
-  const { user, logout } = useAuth()
+  const { user, logout, offline, retry } = useAuth()
   const navigate = useNavigate()
 
   function handleLogout() {
@@ -49,6 +49,14 @@ export default function App() {
       </nav>
 
       <main className="container">
+        {offline && (
+          <p className="warning">
+            Sunucuya ulaşılamıyor. Oturum bilgin korunuyor.{' '}
+            <button className="small" onClick={retry}>
+              Tekrar dene
+            </button>
+          </p>
+        )}
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />

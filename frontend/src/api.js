@@ -55,8 +55,16 @@ function refreshAccessToken() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh: getRefresh() }),
     })
+      .catch(() => {
+        // Ağ hatası: oturum bitmedi, sadece sunucuya ulaşılamadı (status 0)
+        throw new ApiError(0, 'Sunucuya ulaşılamıyor. Backend çalışıyor mu?')
+      })
       .then(async (res) => {
-        if (!res.ok) throw new Error('refresh failed')
+        if (!res.ok) {
+          const message =
+            res.status === 401 ? 'Oturum süresi doldu.' : 'Sunucu hatası, oturum yenilenemedi.'
+          throw new ApiError(res.status, message)
+        }
         const data = await res.json()
         saveTokens({ access: data.access })
       })
@@ -92,7 +100,10 @@ async function request(method, path, body, canRetry = true) {
   if (res.status === 401 && canRetry && getRefresh() && !NO_REFRESH_PATHS.includes(path)) {
     try {
       await refreshAccessToken()
-    } catch {
+    } catch (err) {
+      // Sadece refresh token geçersizse (401) oturumu kapat.
+      // Ağ hatasında ya da sunucu hatasında token'lar korunur.
+      if (err.status !== 401) throw err
       clearTokens()
       window.dispatchEvent(new Event('auth:logout'))
       throw new ApiError(401, 'Oturum süresi doldu, lütfen tekrar giriş yapın.')
