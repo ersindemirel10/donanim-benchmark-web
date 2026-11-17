@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../api.js'
 
 // Sayısal ölçüm alanları: [alan adı, etiket, min, max]
@@ -11,8 +12,8 @@ const MEASURE_FIELDS = [
 ]
 
 // Not: throttled / throttle_reason alanları formda yok, backend hesaplar.
-export default function RunForm({ buildId, profiles, onSaved, onCancel }) {
-  const [software, setSoftware] = useState('')
+export default function RunForm({ buildId, profiles, softwareList, onSaved, onCancel }) {
+  const [softwareId, setSoftwareId] = useState('')
   const [score, setScore] = useState('')
   const [profile, setProfile] = useState('')
   const [notes, setNotes] = useState('')
@@ -20,13 +21,16 @@ export default function RunForm({ buildId, profiles, onSaved, onCancel }) {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
+  // Seçilen yazılımın skor birimi (etikette gösterilir)
+  const unit = softwareList.find((s) => String(s.id) === softwareId)?.score_unit
+
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
     setSubmitting(true)
     try {
       const payload = {
-        software,
+        software: Number(softwareId),
         score: Number(score),
         profile: profile === '' ? null : Number(profile),
         notes,
@@ -52,15 +56,17 @@ export default function RunForm({ buildId, profiles, onSaved, onCancel }) {
       <div className="grid">
         <label>
           Yazılım
-          <input
-            placeholder="Cinebench R23, Time Spy..."
-            value={software}
-            onChange={(e) => setSoftware(e.target.value)}
-            required
-          />
+          <select value={softwareId} onChange={(e) => setSoftwareId(e.target.value)} required>
+            <option value="">Seçiniz</option>
+            {softwareList.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
         </label>
         <label>
-          Skor
+          Skor{unit ? ` (${unit})` : ''}
           <input
             type="number"
             step="any"
@@ -102,6 +108,11 @@ export default function RunForm({ buildId, profiles, onSaved, onCancel }) {
         <textarea rows="2" value={notes} onChange={(e) => setNotes(e.target.value)} />
       </label>
 
+      {softwareList.length === 0 && (
+        <p className="hint">
+          Henüz yazılım yok. Önce <Link to="/software">Yazılımlar</Link> sayfasından ekle.
+        </p>
+      )}
       <p className="hint">
         Throttle durumu sen girmezsin: ölçtüğün sıcaklık parçanın maksimum sıcaklığına
         ulaşırsa sistem bunu kaydederken otomatik işaretler.

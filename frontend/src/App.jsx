@@ -7,6 +7,7 @@ import Register from './pages/Register.jsx'
 import Builds from './pages/Builds.jsx'
 import BuildDetail from './pages/BuildDetail.jsx'
 import Components from './pages/Components.jsx'
+import Software from './pages/Software.jsx'
 
 function NotFound() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
         <span className="brand">Donanım Benchmark</span>
         <NavLink to="/" end>Ana Sayfa</NavLink>
         <NavLink to="/components">Parçalar</NavLink>
+        <NavLink to="/software">Yazılımlar</NavLink>
         {user && <NavLink to="/builds">Sistemlerim</NavLink>}
         <span className="spacer" />
         {user ? (
@@ -62,6 +64,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/components" element={<Components />} />
+          <Route path="/software" element={<Software />} />
 
           {/* Giriş gerektiren sayfalar */}
           <Route element={<ProtectedRoute />}>

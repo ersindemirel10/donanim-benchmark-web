@@ -5,6 +5,7 @@ import RunForm from './RunForm.jsx'
 export default function RunsTab({ buildId }) {
   const [runs, setRuns] = useState([])
   const [profiles, setProfiles] = useState([])
+  const [softwareList, setSoftwareList] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [message, setMessage] = useState(null) // { type: 'success' | 'warning', text }
@@ -18,10 +19,15 @@ export default function RunsTab({ buildId }) {
 
   // Testler ve profil adları (tabloda ve formda kullanılır) birlikte çekilir
   useEffect(() => {
-    Promise.all([api.get(`/builds/${buildId}/runs/`), api.get(`/builds/${buildId}/profiles/`)])
-      .then(([runList, profileList]) => {
+    Promise.all([
+      api.get(`/builds/${buildId}/runs/`),
+      api.get(`/builds/${buildId}/profiles/`),
+      api.get('/software/'),
+    ])
+      .then(([runList, profileList, softwareData]) => {
         setRuns(runList)
         setProfiles(profileList)
+        setSoftwareList(softwareData)
         setError('')
       })
       .catch((err) => setError(err.message))
@@ -63,7 +69,7 @@ export default function RunsTab({ buildId }) {
   }
 
   async function handleDelete(run) {
-    if (!window.confirm(`"${run.software}" test sonucu silinsin mi?`)) return
+    if (!window.confirm(`"${run.software_name}" test sonucu silinsin mi?`)) return
     setError('')
     setMessage(null)
     try {
@@ -96,6 +102,7 @@ export default function RunsTab({ buildId }) {
         <RunForm
           buildId={buildId}
           profiles={profiles}
+          softwareList={softwareList}
           onSaved={handleSaved}
           onCancel={() => setFormOpen(false)}
         />
@@ -103,7 +110,7 @@ export default function RunsTab({ buildId }) {
 
       {noteEdit && (
         <form className="card" onSubmit={saveNote}>
-          <h3>Notu Düzenle: {noteEdit.software}</h3>
+          <h3>Notu Düzenle: {noteEdit.software_name}</h3>
           <p className="hint">Ölçüm değerleri sonradan değiştirilemez, sadece not güncellenebilir.</p>
           <textarea rows="2" value={noteDraft} onChange={(e) => setNoteDraft(e.target.value)} />
           <div className="actions">
@@ -138,8 +145,10 @@ export default function RunsTab({ buildId }) {
             {runs.map((r) => (
               <tr key={r.id} className={r.throttled ? 'throttled-row' : ''}>
                 <td>{new Date(r.created_at).toLocaleString('tr-TR')}</td>
-                <td>{r.software}</td>
-                <td>{r.score}</td>
+                <td>{r.software_name}</td>
+                <td>
+                  {r.score} {r.score_unit}
+                </td>
                 <td>{show(r.max_cpu_temp_c)}</td>
                 <td>{show(r.max_gpu_temp_c)}</td>
                 <td>{r.profile ? profileName(r.profile) : '-'}</td>
