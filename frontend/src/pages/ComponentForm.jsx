@@ -1,15 +1,31 @@
 import { useState } from 'react'
 import { api } from '../api.js'
 
-// Sayısal alanlar: form boş bırakılırsa backend'e null gider
-const NUMBER_FIELDS = [
-  ['cores', 'Çekirdek sayısı'],
-  ['base_clock_mhz', 'Temel saat (MHz)'],
-  ['boost_clock_mhz', 'Boost saat (MHz)'],
-  ['tdp_w', 'TDP (W)'],
-  ['max_temp_c', 'Maksimum sıcaklık (°C)'],
-  ['memory_gb', 'Bellek (GB)'],
-]
+// Sayısal alanların etiketleri
+const LABELS = {
+  cores: 'Çekirdek sayısı',
+  base_clock_mhz: 'Temel saat (MHz)',
+  boost_clock_mhz: 'Boost saat (MHz)',
+  tdp_w: 'TDP (W)',
+  max_temp_c: 'Maksimum sıcaklık (°C)',
+  memory_gb: 'Bellek (GB)',
+}
+
+// Parça türüne göre anlamlı alanlar. Diğerleri formda gösterilmez ve backend'e null gider.
+// (Termal sınır sadece CPU/GPU için kullanılır, RAM'de saat alanı "hız" anlamına gelir.)
+const FIELDS_BY_TYPE = {
+  CPU: ['cores', 'base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'max_temp_c'],
+  GPU: ['cores', 'base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'max_temp_c', 'memory_gb'],
+  RAM: ['base_clock_mhz', 'memory_gb'],
+}
+
+function labelFor(type, field) {
+  if (type === 'RAM' && field === 'base_clock_mhz') return 'Hız (MHz)'
+  if (type === 'GPU' && field === 'memory_gb') return 'Bellek / VRAM (GB)'
+  return LABELS[field]
+}
+
+const ALL_FIELDS = Object.keys(LABELS)
 
 function toFormState(component) {
   const state = {
@@ -17,7 +33,7 @@ function toFormState(component) {
     brand: component?.brand ?? '',
     name: component?.name ?? '',
   }
-  for (const [field] of NUMBER_FIELDS) {
+  for (const field of ALL_FIELDS) {
     state[field] = component?.[field] ?? ''
   }
   return state
@@ -25,8 +41,10 @@ function toFormState(component) {
 
 function toPayload(form) {
   const payload = { type: form.type, brand: form.brand, name: form.name }
-  for (const [field] of NUMBER_FIELDS) {
-    payload[field] = form[field] === '' ? null : Number(form[field])
+  const visible = FIELDS_BY_TYPE[form.type]
+  for (const field of ALL_FIELDS) {
+    // Türe uymayan alanlar (örn. RAM'de çekirdek) her zaman null gönderilir
+    payload[field] = visible.includes(field) && form[field] !== '' ? Number(form[field]) : null
   }
   return payload
 }
@@ -81,9 +99,9 @@ export default function ComponentForm({ component, onSaved, onCancel }) {
           <input value={form.name} onChange={(e) => change('name', e.target.value)} required />
         </label>
 
-        {NUMBER_FIELDS.map(([field, label]) => (
+        {FIELDS_BY_TYPE[form.type].map((field) => (
           <label key={field}>
-            {label}
+            {labelFor(form.type, field)}
             <input
               type="number"
               min="0"
@@ -94,10 +112,12 @@ export default function ComponentForm({ component, onSaved, onCancel }) {
         ))}
       </div>
 
-      <p className="hint">
-        Maksimum sıcaklık, bu parçanın termal sınırıdır. Benchmark sırasında ölçülen sıcaklık bu
-        değere ulaşırsa test otomatik olarak "throttle" işaretlenir.
-      </p>
+      {form.type !== 'RAM' && (
+        <p className="hint">
+          Maksimum sıcaklık, bu parçanın termal sınırıdır. Benchmark sırasında ölçülen sıcaklık bu
+          değere ulaşırsa test otomatik olarak "throttle" işaretlenir.
+        </p>
+      )}
 
       <div className="actions">
         <button type="submit" disabled={submitting}>
