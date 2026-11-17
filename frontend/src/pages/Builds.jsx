@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { api } from '../api.js'
 import BuildForm from './BuildForm.jsx'
 
@@ -7,12 +7,19 @@ export default function Builds() {
   const [builds, setBuilds] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const location = useLocation()
+  // Detay sayfasından silince buraya mesaj taşınır
+  const [success, setSuccess] = useState(location.state?.message ?? '')
   const [formOpen, setFormOpen] = useState(false)
 
   // Listeyi yeniden çekmek için bu sayacı artırırız (kayıt/silme sonrası)
   const [reloadKey, setReloadKey] = useState(0)
   const reload = () => setReloadKey((k) => k + 1)
+
+  // Sayfa yenilenince mesaj tekrar görünmesin diye taşınan durumu temizle
+  useEffect(() => {
+    window.history.replaceState({}, '')
+  }, [])
 
   useEffect(() => {
     api

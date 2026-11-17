@@ -340,3 +340,19 @@ tr.throttled-row {
   background: #2563eb;
   border-radius: 3px;
 }
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.summary h3 {
+  margin: 0;
+  font-size: 2em;
+}
+
+.summary p {
+  margin: 4px 0 12px;
+  color: #6b7280;
+}

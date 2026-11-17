@@ -43,7 +43,7 @@ export default function BuildDetail() {
     if (!ok) return
     try {
       await api.delete(`/builds/${build.id}/`)
-      navigate('/builds')
+      navigate('/builds', { state: { message: 'Sistem silindi.' } })
     } catch (err) {
       setError(err.message)
     }
@@ -61,6 +61,12 @@ export default function BuildDetail() {
   }
 
   const byId = Object.fromEntries(components.map((c) => [c.id, c]))
+
+  // Parçaları CPU, GPU, RAM sırasıyla göster
+  const typeOrder = { CPU: 0, GPU: 1, RAM: 2 }
+  const sortedComponentIds = [...build.components].sort(
+    (a, b) => (typeOrder[byId[a]?.type] ?? 9) - (typeOrder[byId[b]?.type] ?? 9),
+  )
 
   return (
     <div>
@@ -125,7 +131,7 @@ export default function BuildDetail() {
             <p className="hint">Bu sisteme henüz parça eklenmemiş.</p>
           ) : (
             <ul>
-              {build.components.map((cid) => {
+              {sortedComponentIds.map((cid) => {
                 const c = byId[cid]
                 return (
                   <li key={cid}>

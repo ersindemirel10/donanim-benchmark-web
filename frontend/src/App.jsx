@@ -1,4 +1,4 @@
-import { NavLink, Route, Routes, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom'
 import { useAuth } from './auth/AuthContext.jsx'
 import ProtectedRoute from './auth/ProtectedRoute.jsx'
 import Home from './pages/Home.jsx'
@@ -13,6 +13,7 @@ function NotFound() {
     <div>
       <h2>Sayfa bulunamadı</h2>
       <p>Aradığınız adres yok.</p>
+      <Link to="/">Ana sayfaya dön</Link>
     </div>
   )
 }
