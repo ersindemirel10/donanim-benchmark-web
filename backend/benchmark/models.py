@@ -10,6 +10,10 @@ class Component(models.Model):
         GPU = 'GPU', 'GPU'
         RAM = 'RAM', 'RAM'
 
+    class MemoryType(models.TextChoices):
+        DDR4 = 'DDR4', 'DDR4'
+        DDR5 = 'DDR5', 'DDR5'
+
     type = models.CharField(max_length=3, choices=Type.choices)
     brand = models.CharField(max_length=64)
     name = models.CharField(max_length=128)
@@ -19,6 +23,11 @@ class Component(models.Model):
     tdp_w = models.PositiveIntegerField(null=True, blank=True)
     max_temp_c = models.PositiveIntegerField(null=True, blank=True)  # termal eşik
     memory_gb = models.PositiveIntegerField(null=True, blank=True)
+    # Sadece RAM için anlamlı: bellek türü ve CAS gecikmesi (CL)
+    memory_type = models.CharField(
+        max_length=4, choices=MemoryType.choices, null=True, blank=True
+    )
+    cas_latency = models.PositiveIntegerField(null=True, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='components'
     )

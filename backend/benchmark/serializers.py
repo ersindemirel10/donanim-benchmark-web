@@ -25,7 +25,7 @@ class ComponentSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'type', 'brand', 'name', 'cores',
             'base_clock_mhz', 'boost_clock_mhz', 'tdp_w',
-            'max_temp_c', 'memory_gb', 'created_by',
+            'max_temp_c', 'memory_gb', 'memory_type', 'cas_latency', 'created_by',
         ]
         read_only_fields = ['id', 'created_by']  # created_by giriş yapan kullanıcıdan alınır
         # Mantıksız değerleri engellemek için üst sınırlar (özellikle max_temp_c throttle tespitinde kullanılır)
@@ -36,6 +36,7 @@ class ComponentSerializer(serializers.ModelSerializer):
             'tdp_w': {'max_value': 2000},
             'max_temp_c': {'max_value': 150},
             'memory_gb': {'max_value': 4096},
+            'cas_latency': {'min_value': 9, 'max_value': 70},
         }
 
 
