@@ -1,18 +1,18 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Avg, Count, Max, Q
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import BenchmarkRun, Component, SystemBuild, TuningProfile
+from .models import BenchmarkRun, BenchmarkSoftware, Component, SystemBuild, TuningProfile
 from .permissions import IsBuildOwner, IsCreatorOrReadOnly
 from .serializers import (
     BuildSerializer, CompareSerializer, ComponentSerializer, MeSerializer,
     ProfileSerializer, RegisterSerializer,
-    RunSerializer, RunUpdateSerializer,
+    RunSerializer, RunUpdateSerializer, SoftwareSerializer,
 )
 from .services import detect_throttle
 
@@ -210,22 +210,82 @@ class RunDetailView(generics.RetrieveUpdateDestroyAPIView):
         return RunSerializer
 
 
+@extend_schema(tags=['Software'])
+class SoftwareListCreateView(generics.ListCreateAPIView):
+    """GET: benchmark yazılımlarını listeler (herkes). POST: yazılım ekler (giriş gerekir)."""
+
+    queryset = BenchmarkSoftware.objects.all().order_by('name')
+    serializer_class = SoftwareSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
+@extend_schema(tags=['Software'])
+class SoftwareDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """GET: tek yazılım. PUT/PATCH/DELETE: sadece yazılımı ekleyen kullanıcı."""
+
+    queryset = BenchmarkSoftware.objects.all()
+    serializer_class = SoftwareSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsCreatorOrReadOnly]
+
+    @extend_schema(
+        responses={
+            204: None,
+            403: OpenApiResponse(description='Yazılımı sadece ekleyen kullanıcı silebilir'),
+            409: OpenApiResponse(description='Yazılım bir veya daha fazla test sonucunda kullanılıyor'),
+        }
+    )
+    def destroy(self, request, *args, **kwargs):
+        # get_object() önce 404 / 403 kontrollerini yapar, 409 en son gelir
+        software = self.get_object()
+        if software.runs.exists():
+            return Response(
+                {'detail': 'Bu yazılım bir veya daha fazla test sonucunda kullanılıyor, silinemez.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+        self.perform_destroy(software)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 @extend_schema(
     tags=['Builds'],
-    summary='Sistemin ayar profillerini kıyasla',
-    responses={200: CompareSerializer},
+    summary='Sistemin ayar profillerini seçilen yazılım için kıyasla',
+    parameters=[
+        OpenApiParameter(
+            'software', int, OpenApiParameter.QUERY, required=True,
+            description='Kıyaslanacak benchmark yazılımının id değeri',
+        ),
+    ],
+    responses={
+        200: CompareSerializer,
+        400: OpenApiResponse(description="'software' parametresi eksik veya geçersiz"),
+        404: OpenApiResponse(description='Sistem veya yazılım bulunamadı'),
+    },
 )
 class BuildCompareView(APIView):
-    """Sistemdeki test sonuçlarını profile göre gruplar. Her profil için test sayısı,
-    ortalama skor, en yüksek CPU/GPU sıcaklığı ve kaç testin throttle olduğunu verir.
-    En yüksek ortalama skorlu profil en üstte gelir. Profilsiz testler ayrı bir satırdır."""
+    """Sistemdeki test sonuçlarını, seçilen yazılım için profile göre gruplar. Her profil için
+    test sayısı, ortalama skor, en yüksek CPU/GPU sıcaklığı ve kaç testin throttle olduğunu verir.
+    En yüksek ortalama skorlu profil en üstte gelir. Profilsiz testler ayrı bir satırdır.
+    Farklı yazılımların skorları birbirine karıştırılmaz, bu yüzden yazılım seçmek zorunludur."""
 
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, build_id):
         build = get_owned_build(request, build_id)
+
+        software_id = request.query_params.get('software')
+        if not software_id or not software_id.isdigit():
+            return Response(
+                {'detail': "'software' parametresi zorunlu ve yazılım id'si olmalı. Örn: ?software=1"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        software = get_object_or_404(BenchmarkSoftware, pk=int(software_id))
+
         rows = (
-            build.runs.values('profile_id', 'profile__name')  # profile göre grupla
+            build.runs.filter(software=software)
+            .values('profile_id', 'profile__name')  # profile göre grupla
             .annotate(
                 run_count=Count('id'),
                 avg_score=Avg('score'),
@@ -238,6 +298,9 @@ class BuildCompareView(APIView):
         data = {
             'build_id': build.id,
             'build_name': build.name,
+            'software_id': software.id,
+            'software_name': software.name,
+            'score_unit': software.score_unit,
             'rows': [
                 {
                     'profile_id': r['profile_id'],

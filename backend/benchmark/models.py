@@ -28,8 +28,10 @@ class Component(models.Model):
         max_length=4, choices=MemoryType.choices, null=True, blank=True
     )
     cas_latency = models.PositiveIntegerField(null=True, blank=True)
+    # Kullanıcı silinirse parça katalogda kalır (başkalarının sistemleri bozulmasın), sahipsiz olur
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='components'
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='components',
     )
 
     def __str__(self):
@@ -81,6 +83,28 @@ class TuningProfile(models.Model):
         return f'{self.build.name} - {self.name}'
 
 
+class BenchmarkSoftware(models.Model):
+    """Benchmark yazılımı / test türü. Program başına değil test başına kayıt tutulur:
+    örn. Cinebench R23 Multi Core ve Single Core ayrı kayıtlardır, skorları karıştırılmaz."""
+
+    class Category(models.TextChoices):
+        CPU = 'CPU', 'CPU'
+        GPU = 'GPU', 'GPU'
+        GENERAL = 'Genel', 'Genel'
+
+    name = models.CharField(max_length=128, unique=True)
+    category = models.CharField(max_length=8, choices=Category.choices)
+    score_unit = models.CharField(max_length=16, blank=True)  # pts, FPS, % ...
+    # Hazır (sistemin getirdiği) kayıtların sahibi yoktur, kullanıcı silinirse kayıt kalır
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='benchmark_software',
+    )
+
+    def __str__(self):
+        return self.name
+
+
 class BenchmarkRun(models.Model):
     """Bir benchmark test sonucu. throttled alanlarını backend hesaplar."""
 
@@ -90,7 +114,10 @@ class BenchmarkRun(models.Model):
     profile = models.ForeignKey(
         TuningProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name='runs'
     )
-    software = models.CharField(max_length=128)
+    # Kullanılan yazılım silinemez (PROTECT), böylece eski sonuçlar yazılımsız kalmaz
+    software = models.ForeignKey(
+        BenchmarkSoftware, on_delete=models.PROTECT, related_name='runs'
+    )
     score = models.FloatField()
     max_cpu_temp_c = models.PositiveIntegerField(null=True, blank=True)
     max_gpu_temp_c = models.PositiveIntegerField(null=True, blank=True)

@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from .models import BenchmarkRun, Component, SystemBuild, TuningProfile
+from .models import BenchmarkRun, BenchmarkSoftware, Component, SystemBuild, TuningProfile
 
 User = get_user_model()
 
@@ -78,11 +78,22 @@ class ProfileSerializer(serializers.ModelSerializer):
         return value
 
 
+class SoftwareSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BenchmarkSoftware
+        fields = ['id', 'name', 'category', 'score_unit', 'created_by']
+        read_only_fields = ['id', 'created_by']  # created_by giriş yapan kullanıcıdan alınır
+
+
 class RunSerializer(serializers.ModelSerializer):
+    # Yazılım id olarak gönderilir; adı ve birimi cevapta okunur alan olarak döner
+    software_name = serializers.CharField(source='software.name', read_only=True)
+    score_unit = serializers.CharField(source='software.score_unit', read_only=True)
+
     class Meta:
         model = BenchmarkRun
         fields = [
-            'id', 'build', 'profile', 'software', 'score',
+            'id', 'build', 'profile', 'software', 'software_name', 'score_unit', 'score',
             'max_cpu_temp_c', 'max_gpu_temp_c', 'avg_cpu_clock_mhz', 'avg_gpu_clock_mhz',
             'ambient_temp_c', 'notes', 'throttled', 'throttle_reason', 'created_at',
         ]
@@ -126,6 +137,9 @@ class CompareRowSerializer(serializers.Serializer):
 class CompareSerializer(serializers.Serializer):
     build_id = serializers.IntegerField()
     build_name = serializers.CharField()
+    software_id = serializers.IntegerField()
+    software_name = serializers.CharField()
+    score_unit = serializers.CharField(allow_blank=True)
     rows = CompareRowSerializer(many=True)
 
 
