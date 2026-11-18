@@ -40,17 +40,17 @@ function labelFor(type, field) {
 
 const ALL_FIELDS = Object.keys(LABELS)
 
-// CPU ve GPU için popüler markalar listeden seçilir, listede yoksa "Diğer" ile elle yazılır.
-// RAM'de marka çok çeşitli olduğu için serbest metin kalır.
+// Popüler markalar listeden seçilir, listede yoksa "Diğer" ile elle yazılır.
 const BRANDS = {
   CPU: ['Intel', 'AMD'],
   GPU: ['NVIDIA', 'AMD', 'Intel'],
+  RAM: ['Corsair', 'G.Skill', 'Kingston', 'Crucial'],
 }
 const OTHER = '__other__'
 
 // Select'te hangi seçeneğin görüneceği: listedeki marka, "Diğer" ya da boş
 function brandChoiceFor(type, brand) {
-  if (!BRANDS[type] || !brand) return ''
+  if (!brand) return ''
   return BRANDS[type].includes(brand) ? brand : OTHER
 }
 
@@ -103,9 +103,9 @@ export default function ComponentForm({ component, onSaved, onCancel }) {
 
   function changeType(type) {
     // Listeden seçilmiş bir marka, yeni türün listesinde yoksa taşınmaz (örn. NVIDIA → CPU,
-    // Intel → RAM). Elle yazılmış ("Diğer" ya da RAM'deki) marka her zaman korunur.
-    const pickedFromList = Boolean(BRANDS[form.type]) && brandChoice !== OTHER
-    const brand = pickedFromList && !BRANDS[type]?.includes(form.brand) ? '' : form.brand
+    // Intel → RAM). Elle yazılmış ("Diğer") marka her zaman korunur.
+    const pickedFromList = brandChoice !== '' && brandChoice !== OTHER
+    const brand = pickedFromList && !BRANDS[type].includes(form.brand) ? '' : form.brand
     setForm({ ...form, type, brand })
     setBrandChoice(brandChoiceFor(type, brand))
   }
@@ -147,37 +147,28 @@ export default function ComponentForm({ component, onSaved, onCancel }) {
             <option value="RAM">RAM</option>
           </select>
         </label>
-        {BRANDS[form.type] ? (
-          <>
-            <label>
-              Marka
-              <select
-                value={brandChoice}
-                onChange={(e) => changeBrandChoice(e.target.value)}
-                required
-              >
-                <option value="">Seçiniz</option>
-                {BRANDS[form.type].map((brand) => (
-                  <option key={brand} value={brand}>{brand}</option>
-                ))}
-                <option value={OTHER}>Diğer</option>
-              </select>
-            </label>
-            {brandChoice === OTHER && (
-              <label>
-                Marka adı
-                <input
-                  value={form.brand}
-                  onChange={(e) => change('brand', e.target.value)}
-                  required
-                />
-              </label>
-            )}
-          </>
-        ) : (
+        <label>
+          Marka
+          <select
+            value={brandChoice}
+            onChange={(e) => changeBrandChoice(e.target.value)}
+            required
+          >
+            <option value="">Seçiniz</option>
+            {BRANDS[form.type].map((brand) => (
+              <option key={brand} value={brand}>{brand}</option>
+            ))}
+            <option value={OTHER}>Diğer</option>
+          </select>
+        </label>
+        {brandChoice === OTHER && (
           <label>
-            Marka
-            <input value={form.brand} onChange={(e) => change('brand', e.target.value)} required />
+            Marka adı
+            <input
+              value={form.brand}
+              onChange={(e) => change('brand', e.target.value)}
+              required
+            />
           </label>
         )}
         {form.type !== 'RAM' && (

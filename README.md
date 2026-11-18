@@ -61,7 +61,7 @@ Backend CORS ayarı sadece `localhost:5173` ve `127.0.0.1:5173` için açık, o 
 **Arayüzde yapılanlar**
 - Kayıt, giriş, çıkış. Token'lar tarayıcıda (`localStorage`) saklanır, sayfa yenilenince oturum devam eder. Access token (10 dk) dolunca refresh token ile otomatik yenilenir; o da geçersizse oturum kapanır.
 - Hesabım (sağ üstte kullanıcı adına tıklayınca): kullanıcı adı/e-posta güncelleme, şifre değiştirme, hesabı silme (şifre ister).
-- Parçalar: CPU ve GPU eklerken marka popüler markalardan seçilir (listede yoksa "Diğer"), RAM'de marka elle yazılır. Herkes görebilir, giriş yapan ekleyebilir, düzenle/sil sadece parçayı ekleyen kullanıcıya görünür.
+- Parçalar: Parça eklerken marka popüler markalardan seçilir (CPU: Intel/AMD, GPU: NVIDIA/AMD/Intel, RAM: Corsair/G.Skill/Kingston/Crucial; listede yoksa "Diğer"). Herkes görebilir, giriş yapan ekleyebilir, düzenle/sil sadece parçayı ekleyen kullanıcıya görünür.
 - Yazılımlar: benchmark yazılımı listesi; test eklerken yazılım bu listeden seçilir. Düzenle/sil sadece ekleyen kullanıcıya görünür, hazır kayıtlar değiştirilemez.
 - Parça formu türe göre değişir: örneğin RAM için çekirdek/TDP/sıcaklık sorulmaz, bellek türü (DDR4/DDR5), hız, bellek ve CL sorulur. RAM'in model adı bu özelliklerden otomatik oluşturulur (örn. `DDR5-6000 CL30 16GB`).
 - Sistemler: liste, ekleme (parça seçerek), detay, düzenleme, silme.
