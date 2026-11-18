@@ -386,3 +386,210 @@ tr.throttled-row {
 button[type='submit'].danger {
   background: #dc2626;
 }
+
+/* Ana sayfa */
+.home-hero {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 40px;
+  align-items: center;
+  padding: 24px 0 40px;
+}
+
+.home-intro h1 {
+  margin: 0 0 14px;
+  font-size: 2.4rem;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.home-intro > p {
+  max-width: 52ch;
+  margin: 0 0 22px;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+.home-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.home-btn {
+  display: inline-block;
+  padding: 10px 20px;
+  border: 1px solid #2563eb;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.home-btn:hover {
+  background: #1d4ed8;
+}
+
+.home-btn-ghost {
+  background: transparent;
+  color: #1f2937;
+  border-color: #9ca3af;
+}
+
+.home-btn-ghost:hover {
+  background: #e5e7eb;
+}
+
+.home .home-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 26px 0 0;
+  color: #6b7280;
+}
+
+.home-stats strong {
+  color: #1f2937;
+  font-size: 1.15em;
+}
+
+/* Termal sınır örneği: sıcaklık çubuğu, sınır çizgisi ve ölçülen değer */
+.thermal {
+  margin: 0;
+  padding: 22px 24px 8px;
+  border-radius: 10px;
+  background: #1f2937;
+  color: #e5e7eb;
+}
+
+.thermal figcaption {
+  margin-bottom: 18px;
+  color: #9ca3af;
+}
+
+.thermal figcaption strong {
+  color: #fff;
+}
+
+.thermal-row {
+  margin-bottom: 20px;
+}
+
+.thermal-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.thermal-head strong {
+  font-size: 1.25em;
+}
+
+.thermal-head strong.hot {
+  color: #f87171;
+}
+
+.thermal-track {
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #2dd4bf 0%, #facc15 70%, #ef4444 100%);
+}
+
+.thermal-limit {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  width: 2px;
+  background: #fff;
+}
+
+.thermal-dot {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  border: 3px solid #1f2937;
+  border-radius: 50%;
+  background: #fff;
+  transform: translate(-50%, -50%);
+}
+
+.thermal-dot.hot {
+  background: #f87171;
+  border-color: #fff;
+}
+
+.thermal-row p {
+  margin: 10px 0 0;
+  font-size: 0.92em;
+  color: #9ca3af;
+}
+
+/* "Nasıl çalışır": gerçekten sıralı bir akış olduğu için numaralı */
+.home-flow h2 {
+  margin: 0 0 18px;
+}
+
+.home-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: step;
+}
+
+.home-steps li {
+  position: relative;
+  padding: 0 0 22px 52px;
+  counter-increment: step;
+}
+
+.home-steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #1f2937;
+  color: #fff;
+  font-weight: 600;
+  text-align: center;
+  line-height: 34px;
+}
+
+/* Adımları birbirine bağlayan dikey çizgi */
+.home-steps li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 16px;
+  top: 38px;
+  bottom: 4px;
+  width: 2px;
+  background: #d1d5db;
+}
+
+.home-steps h3 {
+  margin: 4px 0 4px;
+  font-size: 1.05em;
+}
+
+.home-steps p {
+  margin: 0;
+  max-width: 62ch;
+  color: #4b5563;
+  line-height: 1.55;
+}
+
+@media (max-width: 760px) {
+  .home-hero {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .home-intro h1 {
+    font-size: 1.9rem;
+  }
+}
