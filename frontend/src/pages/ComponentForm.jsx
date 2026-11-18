@@ -27,8 +27,8 @@ const FIELDS_BY_TYPE = {
 
 // Zorunlu alanlar (backend'deki REQUIRED_BY_TYPE ile aynı). Diğerleri isteğe bağlıdır.
 const REQUIRED_BY_TYPE = {
-  CPU: ['base_clock_mhz', 'boost_clock_mhz', 'tdp_w'],
-  GPU: ['base_clock_mhz', 'boost_clock_mhz', 'tdp_w', 'memory_gb'],
+  CPU: ['base_clock_mhz', 'tdp_w'],
+  GPU: ['tdp_w', 'memory_gb'],
   RAM: ['base_clock_mhz', 'memory_gb', 'cas_latency'],
 }
 
@@ -39,6 +39,20 @@ function labelFor(type, field) {
 }
 
 const ALL_FIELDS = Object.keys(LABELS)
+
+// CPU ve GPU için popüler markalar listeden seçilir, listede yoksa "Diğer" ile elle yazılır.
+// RAM'de marka çok çeşitli olduğu için serbest metin kalır.
+const BRANDS = {
+  CPU: ['Intel', 'AMD'],
+  GPU: ['NVIDIA', 'AMD', 'Intel'],
+}
+const OTHER = '__other__'
+
+// Select'te hangi seçeneğin görüneceği: listedeki marka, "Diğer" ya da boş
+function brandChoiceFor(type, brand) {
+  if (!BRANDS[type] || !brand) return ''
+  return BRANDS[type].includes(brand) ? brand : OTHER
+}
 
 // RAM'in model adı sorulmaz, özelliklerinden üretilir. Örn: DDR5-6000 CL30 16GB
 function ramName(form) {
@@ -77,11 +91,29 @@ function toPayload(form) {
 // component verilirse düzenleme (PUT), verilmezse yeni kayıt (POST)
 export default function ComponentForm({ component, onSaved, onCancel }) {
   const [form, setForm] = useState(toFormState(component))
+  const [brandChoice, setBrandChoice] = useState(
+    brandChoiceFor(component?.type ?? 'CPU', component?.brand ?? ''),
+  )
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   function change(field, value) {
     setForm({ ...form, [field]: value })
+  }
+
+  function changeType(type) {
+    // Listeden seçilmiş bir marka, yeni türün listesinde yoksa taşınmaz (örn. NVIDIA → CPU,
+    // Intel → RAM). Elle yazılmış ("Diğer" ya da RAM'deki) marka her zaman korunur.
+    const pickedFromList = Boolean(BRANDS[form.type]) && brandChoice !== OTHER
+    const brand = pickedFromList && !BRANDS[type]?.includes(form.brand) ? '' : form.brand
+    setForm({ ...form, type, brand })
+    setBrandChoice(brandChoiceFor(type, brand))
+  }
+
+  function changeBrandChoice(choice) {
+    setBrandChoice(choice)
+    // "Diğer" seçilince marka elle yazılacak; listeden seçilince değer hemen belli olur
+    setForm({ ...form, brand: choice === OTHER ? '' : choice })
   }
 
   async function handleSubmit(e) {
@@ -109,16 +141,45 @@ export default function ComponentForm({ component, onSaved, onCancel }) {
       <div className="grid">
         <label>
           Tür
-          <select value={form.type} onChange={(e) => change('type', e.target.value)}>
+          <select value={form.type} onChange={(e) => changeType(e.target.value)}>
             <option value="CPU">CPU</option>
             <option value="GPU">GPU</option>
             <option value="RAM">RAM</option>
           </select>
         </label>
-        <label>
-          Marka
-          <input value={form.brand} onChange={(e) => change('brand', e.target.value)} required />
-        </label>
+        {BRANDS[form.type] ? (
+          <>
+            <label>
+              Marka
+              <select
+                value={brandChoice}
+                onChange={(e) => changeBrandChoice(e.target.value)}
+                required
+              >
+                <option value="">Seçiniz</option>
+                {BRANDS[form.type].map((brand) => (
+                  <option key={brand} value={brand}>{brand}</option>
+                ))}
+                <option value={OTHER}>Diğer</option>
+              </select>
+            </label>
+            {brandChoice === OTHER && (
+              <label>
+                Marka adı
+                <input
+                  value={form.brand}
+                  onChange={(e) => change('brand', e.target.value)}
+                  required
+                />
+              </label>
+            )}
+          </>
+        ) : (
+          <label>
+            Marka
+            <input value={form.brand} onChange={(e) => change('brand', e.target.value)} required />
+          </label>
+        )}
         {form.type !== 'RAM' && (
           <label>
             Model adı
