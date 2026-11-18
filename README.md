@@ -89,7 +89,7 @@ Hepsinin başında `/api` var. Tam liste ve canlı deneme için Swagger sayfası
 |-------|-------|----------|-------|
 | POST | `/auth/register/` | Kayıt | Hayır |
 | POST | `/auth/login/` | Giriş, JWT token verir | Hayır |
-| POST | `/auth/refresh/` | Access token yeniler | Hayır |
+| POST | `/auth/refresh/` | Access token yeniler (refresh token'ın sahibi silinmişse `401`) | Hayır |
 | GET, PUT, PATCH, DELETE | `/auth/me/` | Kendi hesabın: bilgileri gör, kullanıcı adı/e-posta güncelle, hesabı sil (gövdede `password` ister) | Evet |
 | POST | `/auth/change-password/` | Şifre değiştir (`old_password`, `new_password`) | Evet |
 
@@ -142,6 +142,7 @@ Dönen durum kodları: `200`, `201`, `204`, `400` (doğrulama hatası), `401` (g
 - Throttle (ısıl kısıtlama) bilgisi test sonucu eklenirken hesaplanır. Sistemde kullanılan bir parçanın `max_temp_c` değeri değiştirilemez, ama sistemin parça listesi sonradan değiştirilirse (parça eklenir/çıkarılırsa) eski sonuçlar yeniden hesaplanmaz.
 - Profil silinirse o profile ait testler silinmez, profilsiz kalır.
 - Giriş denemelerine hız sınırı (throttling) yoktur.
+- Listeler sayfalanmaz; veri hacminin küçük olduğu varsayılmıştır. Büyürse DRF'nin `PageNumberPagination` ayarı açılır ve frontend listeleri `results` alanından okur.
 - Kendi isteğinle çıkış yaptıktan sonra tarayıcının geri tuşuyla korumalı bir sayfaya dönersen, girişten sonra o sayfaya değil ana sayfaya gidilir.
 
 ## Durum

@@ -1,16 +1,15 @@
 from django.urls import path
 from drf_spectacular.utils import extend_schema
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .views import (
     BuildCompareView, BuildDetailView, BuildListCreateView, ChangePasswordView,
     ComponentDetailView, ComponentListCreateView, MeView,
     ProfileDetailView, ProfileListCreateView, RegisterView,
-    RunDetailView, RunListCreateView, SoftwareDetailView, SoftwareListCreateView,
+    RefreshView, RunDetailView, RunListCreateView, SoftwareDetailView, SoftwareListCreateView,
 )
 
 LoginView = extend_schema(tags=['Auth'], summary='Giriş (JWT token al)')(TokenObtainPairView)
-RefreshView = extend_schema(tags=['Auth'], summary='Access token yenile')(TokenRefreshView)
 
 urlpatterns = [
     path('auth/register/', RegisterView.as_view(), name='register'),

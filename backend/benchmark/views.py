@@ -8,6 +8,8 @@ from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import InvalidToken
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from .models import BenchmarkRun, BenchmarkSoftware, Component, SystemBuild, TuningProfile
 from .permissions import IsBuildOwner, IsCreatorOrReadOnly
@@ -48,6 +50,18 @@ class RegisterView(generics.CreateAPIView):
                 {'detail': 'Bu e-posta zaten kayıtlı.'}, status=status.HTTP_409_CONFLICT
             )
         return super().create(request, *args, **kwargs)
+
+
+@extend_schema(tags=['Auth'], summary='Access token yenile')
+class RefreshView(TokenRefreshView):
+    """Refresh token'ı sahibi silinmiş kullanıcıya aitse simplejwt 500 verir.
+    Bunu 401'e çeviririz ki frontend oturumu kapatsın (500'de oturum açık sayılıyordu)."""
+
+    def post(self, request, *args, **kwargs):
+        try:
+            return super().post(request, *args, **kwargs)
+        except User.DoesNotExist:
+            raise InvalidToken('Kullanıcı bulunamadı.')
 
 
 _update_responses = {
