@@ -85,6 +85,7 @@ export default function Software() {
 
       {formOpen && (
         <SoftwareForm
+          key={formOpen === 'new' ? 'new' : formOpen.id}
           software={formOpen === 'new' ? null : formOpen}
           onSaved={handleSaved}
           onCancel={() => setFormOpen(false)}

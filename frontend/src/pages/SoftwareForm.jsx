@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { api } from '../api.js'
+import { useScrollIntoView } from '../useScrollIntoView.js'
 
 // software verilirse düzenleme (PUT), verilmezse yeni kayıt (POST)
 export default function SoftwareForm({ software, onSaved, onCancel }) {
+  const formRef = useScrollIntoView()
   const [name, setName] = useState(software?.name ?? '')
   const [category, setCategory] = useState(software?.category ?? 'CPU')
   const [scoreUnit, setScoreUnit] = useState(software?.score_unit ?? '')
@@ -27,7 +29,7 @@ export default function SoftwareForm({ software, onSaved, onCancel }) {
   }
 
   return (
-    <form className="card" onSubmit={handleSubmit}>
+    <form className="card" ref={formRef} onSubmit={handleSubmit}>
       <h3>{software ? 'Yazılımı Düzenle' : 'Yeni Yazılım'}</h3>
       {error && <p className="error">{error}</p>}
 

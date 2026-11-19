@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { api } from '../api.js'
+import { useScrollIntoView } from '../useScrollIntoView.js'
 
 const FAN_PROFILES = ['Sessiz', 'Dengeli', 'Performans', 'Maksimum']
 
@@ -29,6 +30,7 @@ function toPayload(form) {
 
 // profile verilirse düzenleme (PUT), verilmezse yeni profil (POST)
 export default function ProfileForm({ buildId, profile, onSaved, onCancel }) {
+  const formRef = useScrollIntoView()
   const [form, setForm] = useState(toFormState(profile))
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -55,7 +57,7 @@ export default function ProfileForm({ buildId, profile, onSaved, onCancel }) {
   }
 
   return (
-    <form className="card" onSubmit={handleSubmit}>
+    <form className="card" ref={formRef} onSubmit={handleSubmit}>
       <h3>{profile ? 'Profili Düzenle' : 'Yeni Profil'}</h3>
       {error && <p className="error">{error}</p>}
 

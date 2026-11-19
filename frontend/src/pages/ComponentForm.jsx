@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { api } from '../api.js'
+import { useScrollIntoView } from '../useScrollIntoView.js'
 
 // Sayısal alanların etiketleri
 const LABELS = {
@@ -90,6 +91,7 @@ function toPayload(form) {
 
 // component verilirse düzenleme (PUT), verilmezse yeni kayıt (POST)
 export default function ComponentForm({ component, onSaved, onCancel }) {
+  const formRef = useScrollIntoView()
   const [form, setForm] = useState(toFormState(component))
   const [brandChoice, setBrandChoice] = useState(
     brandChoiceFor(component?.type ?? 'CPU', component?.brand ?? ''),
@@ -134,7 +136,7 @@ export default function ComponentForm({ component, onSaved, onCancel }) {
   }
 
   return (
-    <form className="card" onSubmit={handleSubmit}>
+    <form className="card" ref={formRef} onSubmit={handleSubmit}>
       <h3>{component ? 'Parçayı Düzenle' : 'Yeni Parça'}</h3>
       {error && <p className="error">{error}</p>}
 

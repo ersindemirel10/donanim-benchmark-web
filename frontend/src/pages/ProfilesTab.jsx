@@ -67,6 +67,7 @@ export default function ProfilesTab({ buildId }) {
 
       {formOpen && (
         <ProfileForm
+          key={formOpen === 'new' ? 'new' : formOpen.id}
           buildId={buildId}
           profile={formOpen === 'new' ? null : formOpen}
           onSaved={handleSaved}

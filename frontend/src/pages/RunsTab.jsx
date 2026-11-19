@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
+import { useScrollIntoView } from '../useScrollIntoView.js'
 import RunForm from './RunForm.jsx'
 
 export default function RunsTab({ buildId }) {
@@ -13,6 +14,8 @@ export default function RunsTab({ buildId }) {
   const [formOpen, setFormOpen] = useState(false)
   const [noteEdit, setNoteEdit] = useState(null) // notu düzenlenen test
   const [noteDraft, setNoteDraft] = useState('')
+  // Aşağıdaki bir testin notunu düzenleyince form üstte kalıp kaybolmasın
+  const noteFormRef = useScrollIntoView([noteEdit])
 
   const [reloadKey, setReloadKey] = useState(0)
   const reload = () => setReloadKey((k) => k + 1)
@@ -109,7 +112,7 @@ export default function RunsTab({ buildId }) {
       )}
 
       {noteEdit && (
-        <form className="card" onSubmit={saveNote}>
+        <form className="card" ref={noteFormRef} onSubmit={saveNote}>
           <h3>Notu Düzenle: {noteEdit.software_name}</h3>
           <p className="hint">Ölçüm değerleri sonradan değiştirilemez, sadece not güncellenebilir.</p>
           <textarea rows="2" value={noteDraft} onChange={(e) => setNoteDraft(e.target.value)} />

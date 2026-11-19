@@ -84,6 +84,7 @@ export default function Components() {
 
       {formOpen && (
         <ComponentForm
+          key={formOpen === 'new' ? 'new' : formOpen.id}
           component={formOpen === 'new' ? null : formOpen}
           onSaved={handleSaved}
           onCancel={() => setFormOpen(false)}
