@@ -27,8 +27,8 @@ const FIELDS_BY_TYPE = {
 
 // Zorunlu alanlar (backend'deki REQUIRED_BY_TYPE ile aynı). Diğerleri isteğe bağlıdır.
 const REQUIRED_BY_TYPE = {
-  CPU: ['base_clock_mhz', 'tdp_w'],
-  GPU: ['tdp_w', 'memory_gb'],
+  CPU: ['base_clock_mhz', 'tdp_w', 'max_temp_c'],
+  GPU: ['tdp_w', 'memory_gb', 'max_temp_c'],
   RAM: ['base_clock_mhz', 'memory_gb', 'cas_latency'],
 }
 

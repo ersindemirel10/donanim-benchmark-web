@@ -21,8 +21,8 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 # Parça türüne göre zorunlu ve yasak alanlar (frontend formundaki alanlarla aynı)
 REQUIRED_BY_TYPE = {
-    'CPU': ['base_clock_mhz', 'tdp_w'],
-    'GPU': ['tdp_w', 'memory_gb'],
+    'CPU': ['base_clock_mhz', 'tdp_w', 'max_temp_c'],
+    'GPU': ['tdp_w', 'memory_gb', 'max_temp_c'],
     'RAM': ['base_clock_mhz', 'memory_gb', 'memory_type', 'cas_latency'],
 }
 FORBIDDEN_BY_TYPE = {
