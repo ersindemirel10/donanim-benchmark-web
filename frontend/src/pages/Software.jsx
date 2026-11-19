@@ -45,6 +45,7 @@ export default function Software() {
     setSuccess('')
     try {
       await api.delete(`/software/${item.id}/`)
+      setFormOpen(false) // açık düzenleme formu silinen yazılıma ait olabilir, eski kalmasın
       setSuccess('Yazılım silindi.')
       reload()
     } catch (err) {

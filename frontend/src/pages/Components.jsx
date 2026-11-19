@@ -53,6 +53,7 @@ export default function Components() {
     setSuccess('')
     try {
       await api.delete(`/components/${component.id}/`)
+      setFormOpen(false) // açık düzenleme formu silinen parçaya ait olabilir, eski kalmasın
       setSuccess('Parça silindi.')
       reload()
     } catch (err) {

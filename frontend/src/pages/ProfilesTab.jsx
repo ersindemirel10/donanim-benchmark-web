@@ -42,6 +42,7 @@ export default function ProfilesTab({ buildId }) {
     setSuccess('')
     try {
       await api.delete(`/profiles/${profile.id}/`)
+      setFormOpen(false) // açık düzenleme formu silinen profile ait olabilir, eski kalmasın
       setSuccess('Profil silindi.')
       reload()
     } catch (err) {
